@@ -1,0 +1,83 @@
+[simulation]
+dt = 0.1
+nt = 48000
+output_dir = "bench/f0125_perf_compare/moment_f0125_hdur80/DFDM_OUTPUT_ak135_mrr_heaviside_hdur80_s6_block3d_np504"
+
+[mesh3d]
+nx = 6
+ny = 6
+nz = 6
+nex = 30
+ney = 30
+nez = 30
+porder = 4
+
+[geometry]
+kind = "earth"
+earth_radius_m = 6371000
+lat_degree = 90
+lon_degree = 90
+depth_top_m = 0
+depth_bottom_m = 6371000
+
+[earth]
+mode = "full"
+chunk_count = 6
+outer_radius_m = 6371000
+inner_radius_m = 0
+central_cube_radius_m = 950000
+inner_core_radius_m = 1217500
+outer_core_radius_m = 3479500
+center_lat_degree = 0
+center_lon_degree = 0
+width_xi_degree = 90
+width_eta_degree = 90
+gamma_degree = 0
+radial_boundary_depths_km = [5421, 5287.25, 5153.5, 4870.75, 4588, 4305.25, 4022.5, 3739.75, 3457, 3174.25, 2891.5, 2643.556, 2395.611, 2147.667, 1899.722, 1651.778, 1403.833, 1155.889, 907.944, 660, 576.667, 493.333, 410, 347.5, 285, 222.5, 160, 97.5, 35, 20, 0]
+
+[material]
+model = "1D_ak135f_no_mud"
+vp = 5000
+vs = 2750
+rho = 2000
+
+[source]
+type = "moment_tensor"
+moment_source_mode = "stress_glut"
+frequency = 0.0125
+amplitude = 1.0
+time_function = "specfem_cmt_heaviside"
+time_shift = 120
+half_duration = 80
+latitude_deg = 6
+longitude_deg = 12
+depth_m = 50000
+mxx = 9.4631883898269581e+19
+myy = 4.2754961384207048e+18
+mzz = 1.092619963309718e+18
+mxy = 2.0114627865772909e+19
+mxz = 1.0168416076895005e+19
+myz = 2.1613635589349773e+18
+discretization = "normalized_delta"
+smoothing_sigma_tangent_elements = 0
+smoothing_sigma_radial_elements = 0
+
+[receiver]
+latitude_deg = 16
+longitude_deg = 12
+depth_m = 0
+
+[boundary]
+top = "free_surface"
+
+[solver]
+mass_factorization = "schur_sqrt"
+stress_pullback_mode = "fused"
+enable_fixture_exports = false
+omp_threads = 1
+
+[receivers]
+names = ["AZ01", "AZ02", "AZ03", "AZ04", "AZ05", "AZ06", "AZ07", "AZ08", "AZ09", "AZ10", "AZ11", "AZ12", "AZ13", "AZ14", "AZ15", "AZ16", "AZ17", "AZ18"]
+latitude_deg = [16, 26, 36, 46, 56, 66, 76, 86, 84, 74, 64, 54, 44, 34, 24, 14, 4, -1]
+longitude_deg = [12, 12, 12, 12, 12, 12, 12, 12, -168, -168, -168, -168, -168, -168, -168, -168, -168, -168]
+depth_m = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

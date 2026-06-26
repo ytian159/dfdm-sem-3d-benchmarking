@@ -1,0 +1,13 @@
+runs/
+build/
+*.pyc
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+*.out
+*.err
+*.time
+*.log
+*.json.tmp
+*.png.tmp
