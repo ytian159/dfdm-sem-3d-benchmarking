@@ -1,7 +1,7 @@
 [submodule "external/dfdm_3d_elastic"]
 	path = external/dfdm_3d_elastic
 	url = git@github.com:ytian159/dfdm_3d_elastic.git
-	branch = benchmark/mpi-3d-elastic-perlmutter
+	branch = main
 [submodule "external/specfem3d_globe"]
 	path = external/specfem3d_globe
 	url = https://github.com/SPECFEM/specfem3d_globe.git

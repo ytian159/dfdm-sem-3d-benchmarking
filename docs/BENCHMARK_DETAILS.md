@@ -18,7 +18,7 @@
 
 The public SPECFEM submodule tracks `SPECFEM/specfem3d_globe` branch `master`.
 
-The intended DFDM solver state is the PPW-control line at `eb1905ea1c8cd715399f1894bff9af0399750014` plus the current tracked PPW-control working patch. Until that full solver branch is published directly, the DFDM submodule tracks the published benchmark base branch `benchmark/mpi-3d-elastic-perlmutter`, and `scripts/prepare_dfdm.sh` applies the patch stack in `patches/dfdm`.
+The intended DFDM solver state is the PPW-control line at `eb1905ea1c8cd715399f1894bff9af0399750014` plus the current tracked PPW-control working patch. Until that full solver branch is published directly, the DFDM submodule tracks the published `main` branch, and `scripts/prepare_dfdm.sh` applies the patch stack in `patches/dfdm`.
 
 When the DFDM `ppw-3d-control` branch is available on GitHub, update the DFDM submodule to that branch and remove the local patch stack.
 
