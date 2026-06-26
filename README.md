@@ -1,48 +1,29 @@
-# DFDM/SEM 3D Benchmarking
+# DFDM/SEM 3D Benchmarking Usage
 
-This repository stages and runs the AK135 Mrr `f0=0.0125` resolved-PPW benchmark used to compare DFDM 3D waveforms against SPECFEM3D_GLOBE waveforms, then regenerates SEM/DFDM overlay, residual, and metrics figures.
+This repository stages and runs the AK135 Mrr `f0=0.0125` resolved-PPW benchmark, then compares DFDM 3D waveforms against SPECFEM3D_GLOBE waveforms.
 
-## Repository Layout
+Detailed repository notes are in [docs/BENCHMARK_DETAILS.md](docs/BENCHMARK_DETAILS.md).
 
-- `external/dfdm_3d_elastic`: DFDM 3D solver submodule.
-- `external/specfem3d_globe`: public SPECFEM3D_GLOBE submodule.
-- `patches/dfdm`: patch stack that reconstructs the local PPW-control DFDM state from the published DFDM ancestor branch.
-- `cases/ak135_mrr_hdur80_f0125`: base DFDM TOML, SPECFEM `DATA` files, and case matrix.
-- `scripts/stage_cases.py`: creates repo-relative run directories under `runs/`.
-- `scripts/run_case_slurm.sh`: runs SPECFEM mesher/solver, DFDM solver, then comparison figures inside an existing Slurm allocation.
-- `scripts/plot_sem_dfdm.py`: regenerates SEM/DFDM Z overlay, difference, combined, and metrics outputs.
-- `scripts/validate_smoke.sh`: clone-clean smoke test using deterministic synthetic traces.
-
-## Submodules
-
-The public SPECFEM submodule tracks `SPECFEM/specfem3d_globe` branch `master`.
-
-The intended DFDM solver state is the PPW-control line at `eb1905ea1c8cd715399f1894bff9af0399750014` plus the current tracked PPW-control working patch. In this checkout that branch was not publishable from the session, so the DFDM submodule tracks the published ancestor branch `codex/mpi-3d-elastic-perlmutter`, and `scripts/prepare_dfdm.sh` applies the patch stack in `patches/dfdm`.
-
-When the DFDM `ppw-3d-control` branch is available on GitHub, update the DFDM submodule to that branch and remove the local patch stack.
-
-## Quick Validation
+## Clone
 
 ```bash
-git clone --recurse-submodules <repo-url> dfdm-sem-3d-benchmarking
+git clone --recurse-submodules git@github.com:ytian159/dfdm-sem-3d-benchmarking.git
 cd dfdm-sem-3d-benchmarking
+```
+
+If the repo was cloned without submodules:
+
+```bash
+git submodule update --init --recursive
+```
+
+## Smoke Test
+
+This does not run the physical solvers. It stages a tiny fixture, creates deterministic synthetic traces, regenerates figures, and checks that tracked files do not depend on machine-local paths.
+
+```bash
 bash scripts/validate_smoke.sh
 ```
-
-The smoke test does not run either solver. It stages the benchmark format, creates deterministic SEM/DFDM-like traces under `runs/fixture_smoke`, regenerates figures, and checks that checked-in files do not contain machine-local paths.
-
-## Stage Physical Cases
-
-```bash
-python3 scripts/stage_cases.py --case pilot_nex60_sem256_720s --force
-python3 scripts/stage_cases.py --case target_nex75_sem320_4800s --force
-```
-
-The generated run tree contains:
-
-- `sem_case/DATA`: SPECFEM input files.
-- `dfdm_ak135_mrr_hdur80_refined.toml`: DFDM input file with repo-relative output path.
-- `case_metadata.json`: paths and case parameters consumed by plotting and run scripts.
 
 ## Build
 
@@ -52,33 +33,81 @@ DFDM:
 bash scripts/build_dfdm.sh
 ```
 
-SPECFEM3D_GLOBE on a Perlmutter-style environment:
+SPECFEM3D_GLOBE on Perlmutter-style Cray environments:
 
 ```bash
 bash scripts/build_specfem_perlmutter.sh
 ```
 
-You can also build SPECFEM outside this repo and set `SPECFEM_ROOT=/path/to/specfem3d_globe`.
+If SPECFEM is already built elsewhere, set `SPECFEM_ROOT=/path/to/specfem3d_globe`.
+If DFDM is already built elsewhere, set `DFDM_EXE=/path/to/dfdm_elastic3d`.
 
-## Run In Slurm
+## Stage Cases
 
-Run inside an allocation or submit the script through `sbatch` with resources matching the case matrix.
+Stage the case before launching separate SEM and DFDM jobs:
 
 ```bash
-# Pilot case, nominal resources: 4 nodes, 4 hours.
+python3 scripts/stage_cases.py --case pilot_nex60_sem256_720s --force
+python3 scripts/stage_cases.py --case target_nex75_sem320_4800s --force
+```
+
+Available physical cases:
+
+- `pilot_nex60_sem256_720s`: shorter pilot case, nominally 4 nodes and 4 hours.
+- `target_nex75_sem320_4800s`: target 80-minute case, nominally 4 nodes and 48 hours.
+
+`fixture_smoke` is only for `scripts/validate_smoke.sh`.
+
+## Run SEM Only
+
+```bash
+sbatch -A <account> -C cpu -q regular -t 04:00:00 -N 4 --exclusive \
+  --ntasks-per-node=128 --export=ALL,NO_STAGE=1 \
+  scripts/run_sem_slurm.sh pilot_nex60_sem256_720s
+```
+
+For the target case, use `-t 48:00:00` and replace the case name with `target_nex75_sem320_4800s`.
+
+## Run DFDM Only
+
+```bash
+sbatch -A <account> -C cpu -q regular -t 04:00:00 -N 4 --exclusive \
+  --ntasks-per-node=128 --export=ALL,NO_STAGE=1 \
+  scripts/run_dfdm_slurm.sh pilot_nex60_sem256_720s
+```
+
+For the target case, use `-t 48:00:00` and replace the case name with `target_nex75_sem320_4800s`.
+
+## Compare Existing Outputs Only
+
+Run this after the SEM and DFDM jobs for the same case have both finished:
+
+```bash
+bash scripts/compare_case.sh pilot_nex60_sem256_720s
+```
+
+The comparison writes figures and metrics under `runs/<case>/`.
+
+## Run SEM, DFDM, Then Compare
+
+Use this combined wrapper when one Slurm job should stage the case, run both solvers, and generate comparison figures:
+
+```bash
 sbatch -A <account> -C cpu -q regular -t 04:00:00 -N 4 --exclusive \
   --ntasks-per-node=128 scripts/run_case_slurm.sh pilot_nex60_sem256_720s
+```
 
-# Target case, nominal resources: 4 nodes, 48 hours.
+For the target case:
+
+```bash
 sbatch -A <account> -C cpu -q regular -t 48:00:00 -N 4 --exclusive \
   --ntasks-per-node=128 scripts/run_case_slurm.sh target_nex75_sem320_4800s
 ```
 
-Outputs are written under `runs/<case>/`, including:
+## Useful Options
 
-- `sem_case/OUTPUT_FILES/DF.AZ*.BX*.sem.ascii`
-- `DFDM_OUTPUT_*/Uxyz_dfdm3d_geo_AZ*_nex*_N*.txt`
-- `resolved_ppw_sem_dfdm_Z.png`
-- `resolved_ppw_sem_dfdm_diff_Z.png`
-- `resolved_ppw_sem_dfdm_compare_diff_Z.png`
-- `resolved_ppw_sem_dfdm_metrics.md`
+- `NO_STAGE=1`: do not stage or restage before running a solver wrapper.
+- `FORCE_STAGE=1`: restage if using `scripts/run_sem_slurm.sh` or `scripts/run_dfdm_slurm.sh`.
+- `SPECFEM_ROOT=/path/to/specfem3d_globe`: use an external SPECFEM build.
+- `DFDM_EXE=/path/to/dfdm_elastic3d`: use an external DFDM executable.
+- `COMPARE_DT=0.1`: set comparison resampling interval in seconds.
