@@ -17,14 +17,6 @@ If the repo was cloned without submodules:
 git submodule update --init --recursive
 ```
 
-## Smoke Test
-
-This does not run the physical solvers. It stages a tiny fixture, creates deterministic synthetic traces, regenerates figures, and checks that tracked files do not depend on machine-local paths.
-
-```bash
-bash scripts/validate_smoke.sh
-```
-
 ## Build
 
 DFDM:
@@ -39,8 +31,7 @@ SPECFEM3D_GLOBE on Perlmutter-style Cray environments:
 bash scripts/build_specfem_perlmutter.sh
 ```
 
-If SPECFEM is already built elsewhere, set `SPECFEM_ROOT=/path/to/specfem3d_globe`.
-If DFDM is already built elsewhere, set `DFDM_EXE=/path/to/dfdm_elastic3d`.
+By default, the build scripts use the solver submodules in this repository. External solver binaries are optional run-time overrides; see Useful Options below.
 
 ## Stage Cases
 
@@ -55,8 +46,6 @@ Available physical cases:
 
 - `pilot_nex60_sem256_720s`: shorter pilot case, nominally 4 nodes and 4 hours.
 - `target_nex75_sem320_4800s`: target 80-minute case, nominally 4 nodes and 48 hours.
-
-`fixture_smoke` is only for `scripts/validate_smoke.sh`.
 
 ## Run SEM Only
 
@@ -108,6 +97,6 @@ sbatch -A <account> -C cpu -q regular -t 48:00:00 -N 4 --exclusive \
 
 - `NO_STAGE=1`: do not stage or restage before running a solver wrapper.
 - `FORCE_STAGE=1`: restage if using `scripts/run_sem_slurm.sh` or `scripts/run_dfdm_slurm.sh`.
-- `SPECFEM_ROOT=/path/to/specfem3d_globe`: use an external SPECFEM build.
-- `DFDM_EXE=/path/to/dfdm_elastic3d`: use an external DFDM executable.
+- `SPECFEM_ROOT=/path/to/specfem3d_globe`: optional run-time override for an already-built SPECFEM tree. The directory must contain `bin/xmeshfem3D` and `bin/xspecfem3D`.
+- `DFDM_EXE=/path/to/dfdm_elastic3d`: optional run-time override for an already-built DFDM executable.
 - `COMPARE_DT=0.1`: set comparison resampling interval in seconds.
