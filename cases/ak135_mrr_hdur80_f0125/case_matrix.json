@@ -8,9 +8,9 @@
       "record_minutes": 10.0,
       "dfdm_nex": 6,
       "dfdm_ney": 6,
-      "dfdm_nez": 6,
+      "dfdm_nez": 30,
       "dfdm_dt": 1.0,
-      "dfdm_nt": 601,
+      "dfdm_nt": 20,
       "sem_nex": 16,
       "sem_dt": 1.0,
       "slurm": {

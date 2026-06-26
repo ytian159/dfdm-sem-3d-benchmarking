@@ -2,6 +2,7 @@
 """Create deterministic synthetic SEM/DFDM outputs for clone-time smoke tests."""
 
 import math
+import json
 import sys
 from pathlib import Path
 
@@ -33,8 +34,9 @@ def main():
         print("usage: create_smoke_outputs.py CASE_DIR", file=sys.stderr)
         return 2
     case_dir = Path(sys.argv[1]).resolve()
+    meta = json.loads((case_dir / "case_metadata.json").read_text())
     sem_out = case_dir / "sem_case" / "OUTPUT_FILES"
-    dfdm_out = case_dir / "DFDM_OUTPUT_ak135_mrr_hdur80_nex6_nez6"
+    dfdm_out = case_dir.parents[1] / meta["dfdm_output"]
     sem_out.mkdir(parents=True, exist_ok=True)
     dfdm_out.mkdir(parents=True, exist_ok=True)
 
