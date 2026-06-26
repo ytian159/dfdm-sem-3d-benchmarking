@@ -12550,36 +12550,6 @@ index 0000000..031cccb
 +
 +if __name__ == "__main__":
 +    main()
-diff --git a/validate/run_dfdm_forensic_baseline.py b/validate/run_dfdm_forensic_baseline.py
-index ceb1776..444f262 100755
---- a/validate/run_dfdm_forensic_baseline.py
-+++ b/validate/run_dfdm_forensic_baseline.py
-@@ -149,9 +149,12 @@ def rss_to_kb(value: int | float) -> float:
- 
- 
- def parse_max_rss_kb(stderr_text: str) -> float | None:
--    match = re.search(r"^\s*(\d+)\s+maximum resident set size$", stderr_text, re.MULTILINE)
--    if match:
--        return rss_to_kb(int(match.group(1)))
-+    mac_match = re.search(r"^\s*(\d+)\s+maximum resident set size$", stderr_text, re.MULTILINE)
-+    if mac_match:
-+        return rss_to_kb(int(mac_match.group(1)))
-+    linux_match = re.search(r"^\s*Maximum resident set size \(kbytes\):\s*(\d+)\s*$", stderr_text, re.MULTILINE)
-+    if linux_match:
-+        return float(linux_match.group(1))
-     return None
- 
- 
-@@ -171,7 +174,8 @@ def run_command(cmd: list[str],
-                 timeout_seconds: float | None = None) -> dict[str, Any]:
-     stdout_path = out_dir / f"{stem}.stdout.txt"
-     stderr_path = out_dir / f"{stem}.stderr.txt"
--    timed_cmd = ["/usr/bin/time", "-l", *cmd]
-+    time_flag = "-l" if sys.platform == "darwin" else "-v"
-+    timed_cmd = ["/usr/bin/time", time_flag, *cmd]
-     start = time.perf_counter()
-     try:
-         proc = subprocess.run(
 diff --git a/validate/setup_specfem_globe_pointforce_benchmark.py b/validate/setup_specfem_globe_pointforce_benchmark.py
 index 09402e6..382a4b0 100644
 --- a/validate/setup_specfem_globe_pointforce_benchmark.py
