@@ -4,7 +4,6 @@
 
 - `external/dfdm_3d_elastic`: DFDM 3D solver submodule.
 - `external/specfem3d_globe`: public SPECFEM3D_GLOBE submodule.
-- `patches/dfdm`: source patch stack applied by `scripts/prepare_dfdm.sh` before building DFDM. It reconstructs the PPW-control solver state from the published DFDM submodule commit.
 - `cases/ak135_mrr_hdur80_f0125`: base DFDM TOML, SPECFEM `DATA` files, and case matrix.
 - `scripts/stage_cases.py`: creates repo-relative run directories under `runs/`.
 - `scripts/run_sem_slurm.sh`: runs only SPECFEM mesher and solver for a staged case.
@@ -18,18 +17,13 @@
 
 The public SPECFEM submodule tracks `SPECFEM/specfem3d_globe` branch `master`.
 
-The intended DFDM solver state is the PPW-control line at `eb1905ea1c8cd715399f1894bff9af0399750014` plus the current tracked PPW-control working patch. Until that full solver branch is published directly, the DFDM submodule tracks the published `main` branch, and `scripts/prepare_dfdm.sh` applies the patch stack in `patches/dfdm`.
+The DFDM submodule tracks `ytian159/dfdm_3d_elastic` branch `main`. The submodule commit contains the PPW-control 3D optimization source directly, including fixed axis kernels, full-shell radial `nez` decoupling, hat-face projection, and the benchmark validation utilities.
 
-When the DFDM `ppw-3d-control` branch is available on GitHub, update the DFDM submodule to that branch and remove the local patch stack.
+`scripts/prepare_dfdm.sh` updates the DFDM submodule and verifies these source markers before the DFDM build:
 
-## DFDM Patch Stack
-
-`scripts/build_dfdm.sh` calls `scripts/prepare_dfdm.sh` before compiling. That preparation script updates the DFDM submodule and applies `patches/dfdm/*.patch` in filename order if the PPW-control source changes are not already present.
-
-- `0001-base-to-ppw-control-code.patch`: large source diff from the published DFDM benchmark base branch to the PPW-control solver code.
-- `0002-current-ppw-control-code.patch`: smaller follow-up diff for the current tracked PPW-control working changes.
-
-These patches are source reconstruction patches, not benchmark inputs or generated outputs.
+- `src/axis_kernels_fixed.h`
+- `mesh3d.full_shell_nez_decoupled` support in `src/config_toml3d.cpp`
+- `hat_l2_projection_matrix` in `src/elastic3d.cpp`
 
 ## Case Matrix
 
