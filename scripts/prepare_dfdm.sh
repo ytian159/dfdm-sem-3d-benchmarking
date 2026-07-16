@@ -15,5 +15,5 @@ if [[ -f "$dfdm_dir/src/axis_kernels_fixed.h" ]] \
 fi
 
 echo "DFDM submodule does not contain the expected PPW-control source." >&2
-echo "Update external/dfdm_3d_elastic to the current dfdm_3d_elastic main branch." >&2
+echo "Update external/dfdm_3d_elastic to the current DFDM3D main branch." >&2
 exit 2

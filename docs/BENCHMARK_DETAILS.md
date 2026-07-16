@@ -2,7 +2,7 @@
 
 ## Repository Layout
 
-- `external/dfdm_3d_elastic`: DFDM 3D solver submodule.
+- `external/dfdm_3d_elastic`: DFDM3D solver submodule (the path is retained for compatibility with existing benchmark scripts).
 - `external/specfem3d_globe`: public SPECFEM3D_GLOBE submodule.
 - `cases/ak135_mrr_hdur80_f0125`: base DFDM TOML, SPECFEM `DATA` files, and case matrix.
 - `scripts/stage_cases.py`: creates repo-relative run directories under `runs/`.
@@ -17,7 +17,7 @@
 
 The public SPECFEM submodule tracks `SPECFEM/specfem3d_globe` branch `master`.
 
-The DFDM submodule tracks `ytian159/dfdm_3d_elastic` branch `main`. The submodule commit contains the PPW-control 3D optimization source directly, including fixed axis kernels, full-shell radial `nez` decoupling, hat-face projection, and the benchmark validation utilities.
+The DFDM submodule tracks `ytian159/DFDM3D` branch `main`. The pinned milestone includes the consolidated global solver, PPW-control source, automesh tooling, benchmark harness, and permanent correctness gates. It retains the fixed axis kernels, full-shell radial `nez` decoupling, hat-face projection, and benchmark validation utilities required by this repository.
 
 `scripts/prepare_dfdm.sh` updates the DFDM submodule and verifies these source markers before the DFDM build:
 
