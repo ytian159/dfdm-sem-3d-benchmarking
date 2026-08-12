@@ -5,7 +5,8 @@ repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 export MPLCONFIGDIR="${MPLCONFIGDIR:-$repo/runs/mplconfig_smoke}"
 mkdir -p "$MPLCONFIGDIR"
 
-python3 "$repo/scripts/stage_cases.py" --case fixture_smoke --force
+# The fixture holds only synthetic traces, so restaging over them is safe.
+python3 "$repo/scripts/stage_cases.py" --case fixture_smoke --force --discard-results
 python3 "$repo/scripts/create_smoke_outputs.py" "$repo/runs/fixture_smoke"
 COMPARE_DT=1.0 "$repo/scripts/compare_case.sh" fixture_smoke
 python3 "$repo/scripts/check_no_external_paths.py"

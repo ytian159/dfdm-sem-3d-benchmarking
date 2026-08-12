@@ -21,6 +21,8 @@
 
 The published hdur-80 SEM cost anchor is `NEX=64`, `DT=0.15`, 4800-second records on 24 ranks, billed at 0.147 node-hours. It is staged by the `paper_sem_nex64_4800s` case, whose `DATA` directory is byte-identical to the campaign run that produced that number.
 
+A clean run of the staged case on Perlmutter (2026-08-12, `shared_interactive`, 24 ranks at `-c 2`) reproduced it: 2828.8 s solver wall over 33000 steps at 85.5 ms/step, 0.1473 node-hours, against the original run's 2832.7 s and 0.1475. Its seismograms correlate with the original run's at 1.00000 on all 36 N/Z components, and the case passes the gate against the `NEX=96` rung 36/36 with a worst full-trace correlation of 0.99812 and PKP-window correlations of 0.99998.
+
 Two conventions have to match for the number to come out right.
 
 **Cost.** `node_hours = sem_tasks * cpus_per_task / 256 * solver_wall_hours` on Perlmutter CPU nodes (128 physical cores, 256 SMT slots), so a 24-rank run at `-c 2` bills 0.1875 of a node. The wall clock is the solver invocation alone; meshing is excluded for both codes. `scripts/sem_cost.py` implements exactly this and writes `runs/<case>/sem_perf.json`.
