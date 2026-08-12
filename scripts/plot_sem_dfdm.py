@@ -37,8 +37,11 @@ def local_basis(lat_deg, lon_deg):
 def load_sem(sem_output, sta):
     out = {}
     for comp in "ENZ":
-        path = sem_output / ("DF.%s.BX%s.sem.ascii" % (sta, comp))
-        d = np.loadtxt(str(path))
+        # NEX < 128 writes MX* channels, NEX >= 128 writes BX*.
+        matches = sorted(glob.glob(str(sem_output / ("DF.%s.?X%s.sem.ascii" % (sta, comp)))))
+        if not matches:
+            raise FileNotFoundError("missing SEM %s trace for %s in %s" % (comp, sta, sem_output))
+        d = np.loadtxt(matches[0])
         t = d[:, 0] + SOURCE_SHIFT
         v = d[:, 1].copy()
         pre = (t >= 0.0) & (t <= BASELINE_END)
@@ -79,6 +82,11 @@ def peak_ratio(test, base):
     return float(np.max(np.abs(test))) / den
 
 
+def corr(test, base):
+    den = math.sqrt(float(np.dot(test, test)) * float(np.dot(base, base)))
+    return float(np.dot(test, base) / den) if den > 0.0 else float("nan")
+
+
 def load_rows(case_dir, dt):
     meta = json.loads((case_dir / "case_metadata.json").read_text())
     sem_output = resolve_path(meta["sem_dir"]) / "OUTPUT_FILES"
@@ -105,6 +113,7 @@ def load_rows(case_dir, dt):
             "scale": scale,
             "rms_pct": rms_pct(d, s),
             "peak_ratio": peak_ratio(d, s),
+            "corr": corr(d, s),
         })
     return rows
 
@@ -178,21 +187,27 @@ def save_metrics(case_dir, rows):
     out = case_dir / "resolved_ppw_sem_dfdm_metrics.md"
     vals = [row["rms_pct"] for row in rows if math.isfinite(row["rms_pct"])]
     peak_vals = [row["peak_ratio"] for row in rows if math.isfinite(row["peak_ratio"])]
+    corr_vals = [row["corr"] for row in rows if math.isfinite(row["corr"])]
     lines = [
         "# SEM/DFDM Z Comparison",
         "",
         "- Reference: SEM",
         "- Test: DFDM",
         "- Stations: %d" % len(rows),
+        "- Median Z correlation: %.5f" % float(np.median(corr_vals)),
         "- Median Z RMS difference: %.2f %%" % float(np.median(vals)),
         "- Median Z peak ratio DFDM/SEM: %.4f" % float(np.median(peak_vals)),
         "",
-        "| station | dist deg | DFDM/SEM Z RMS % | Z peak ratio DFDM/SEM |",
-        "|---|---:|---:|---:|",
+        "Stations whose first arrival falls outside the record carry no signal;",
+        "their ratios compare noise with noise and are not meaningful.",
+        "",
+        "| station | dist deg | Z corr | DFDM/SEM Z RMS % | Z peak ratio DFDM/SEM |",
+        "|---|---:|---:|---:|---:|",
     ]
     for row in rows:
-        lines.append("| %s | %d | %.2f | %.4f |" %
-                     (row["station"], row["distance_deg"], row["rms_pct"], row["peak_ratio"]))
+        lines.append("| %s | %d | %.5f | %.2f | %.4f |" %
+                     (row["station"], row["distance_deg"], row["corr"],
+                      row["rms_pct"], row["peak_ratio"]))
     out.write_text("\n".join(lines) + "\n")
     return out
 

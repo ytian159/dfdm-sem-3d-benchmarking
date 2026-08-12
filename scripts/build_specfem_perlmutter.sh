@@ -6,6 +6,7 @@ spec_dir="$repo/external/specfem3d_globe"
 jobs="${JOBS:-16}"
 
 git -C "$repo" submodule update --init external/specfem3d_globe
+"$repo/scripts/prepare_specfem.sh"
 
 cd "$spec_dir"
 if [[ ! -x ./configure ]]; then

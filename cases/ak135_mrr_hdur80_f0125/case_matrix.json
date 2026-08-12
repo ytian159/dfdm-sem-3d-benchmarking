@@ -4,6 +4,7 @@
       "name": "fixture_smoke",
       "note": "Small synthetic SEM/DFDM waveform fixture used to validate clone-clean plotting.",
       "source": "Synthetic AK135 Mrr-shaped traces; not a physics benchmark.",
+      "synthetic": true,
       "equivalent_frequency_hz": 0.0125,
       "record_minutes": 10.0,
       "dfdm_nex": 6,
@@ -12,6 +13,7 @@
       "dfdm_dt": 0.04,
       "dfdm_nt": 20,
       "sem_nex": 16,
+      "sem_nproc": 1,
       "sem_dt": 1.0,
       "slurm": {
         "time": "00:10:00",
@@ -21,6 +23,40 @@
         "dfdm_nodes": 1,
         "dfdm_tasks": 1,
         "cpus_per_task": 1
+      }
+    },
+    {
+      "name": "paper_sem_nex64_4800s",
+      "note": "Paper SEM cost anchor: cheapest SPECFEM mesh passing 0.995 on all 36 N/Z components vs the NEX320 reference at hdur80. 24 ranks on one shared node; 0.147 node-h as billed (node-h = tasks*cpus/256 x solver wall hours).",
+      "source": "AK135 Mrr CMT, stock SPECFEM quasi-Heaviside, half_duration=80s",
+      "equivalent_frequency_hz": 0.0125,
+      "record_minutes": 80.0,
+      "sem_nex": 64,
+      "sem_nproc": 2,
+      "sem_dt": 0.15,
+      "slurm": {
+        "time": "03:00:00",
+        "nodes": 1,
+        "sem_nodes": 1,
+        "sem_tasks": 24,
+        "cpus_per_task": 2
+      }
+    },
+    {
+      "name": "paper_sem_nex96_4800s",
+      "note": "Paper SEM convergence rung certifying the NEX64 anchor (NEX64-vs-NEX96 worst correlation 0.99928). 24 ranks on one shared node; 0.503 node-h as billed.",
+      "source": "AK135 Mrr CMT, stock SPECFEM quasi-Heaviside, half_duration=80s",
+      "equivalent_frequency_hz": 0.0125,
+      "record_minutes": 80.0,
+      "sem_nex": 96,
+      "sem_nproc": 2,
+      "sem_dt": 0.1,
+      "slurm": {
+        "time": "04:00:00",
+        "nodes": 1,
+        "sem_nodes": 1,
+        "sem_tasks": 24,
+        "cpus_per_task": 2
       }
     },
     {
@@ -35,6 +71,7 @@
       "dfdm_dt": 0.04,
       "dfdm_nt": 18000,
       "sem_nex": 256,
+      "sem_nproc": 8,
       "sem_dt": 0.04,
       "slurm": {
         "time": "04:00:00",
@@ -48,7 +85,7 @@
     },
     {
       "name": "target_nex75_sem320_4800s",
-      "note": "Target resolved-PPW AK135 Mrr CMT case: DFDM NEX75/NEZ30 against SPECFEM NEX320 for 80 record minutes.",
+      "note": "Target resolved-PPW AK135 Mrr CMT case: DFDM NEX75/NEZ30 against SPECFEM NEX320 for 80 record minutes. The SEM arm is the paper's converged NEX320 reference configuration.",
       "source": "AK135 Mrr CMT, stock SPECFEM quasi-Heaviside, half_duration=80s",
       "equivalent_frequency_hz": 0.0125,
       "record_minutes": 80.0,
@@ -58,6 +95,7 @@
       "dfdm_dt": 0.04,
       "dfdm_nt": 120000,
       "sem_nex": 320,
+      "sem_nproc": 8,
       "sem_dt": 0.03,
       "slurm": {
         "time": "48:00:00",

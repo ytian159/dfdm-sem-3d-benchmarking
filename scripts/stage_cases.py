@@ -71,39 +71,61 @@ def copy_sem_data(sem_dir):
             shutil.copy2(str(src), str(data_dir / src.name))
 
 
-def stage_case(name, cfg, force):
+def check_sem_decomposition(name, cfg):
+    """SPECFEM requires NEX divisible by 8*NPROC, and ranks = 6*NPROC^2."""
+    if cfg.get("synthetic"):
+        return None
+    nex = int(cfg["sem_nex"])
+    nproc = int(cfg["sem_nproc"])
+    if nex % (8 * nproc) != 0:
+        raise SystemExit(
+            "case %s: NEX=%d is not divisible by 8*NPROC=%d; SPECFEM will reject the mesh"
+            % (name, nex, 8 * nproc))
+    ranks = 6 * nproc * nproc
+    declared = int(cfg["slurm"]["sem_tasks"])
+    if ranks != declared:
+        raise SystemExit(
+            "case %s: sem_tasks=%d but 6*NPROC^2=%d; fix the case matrix"
+            % (name, declared, ranks))
+    return ranks
+
+
+RESULT_GLOBS = [
+    "sem_case/OUTPUT_FILES/*.sem.ascii",
+    "DFDM_OUTPUT_*/*.txt",
+    "*.png",
+    "*_perf.json",
+    "*_metrics.md",
+    "*_score*.json",
+]
+
+
+def existing_results(case_dir):
+    """Solver outputs / figures already in a case dir, so restaging cannot eat them."""
+    found = []
+    for pattern in RESULT_GLOBS:
+        found.extend(sorted(case_dir.glob(pattern))[:1])
+    return found
+
+
+def stage_case(name, cfg, force, discard_results=False):
     case_dir = RUNS / name
     if case_dir.exists():
         if not force:
             raise SystemExit("%s exists; rerun with --force to restage" % case_dir)
+        results = existing_results(case_dir)
+        if results and not discard_results:
+            listing = "\n  ".join(str(p.relative_to(ROOT)) for p in results)
+            raise SystemExit(
+                "%s holds solver results; restaging would delete them:\n  %s\n"
+                "Re-run with --discard-results to overwrite, or move the directory aside."
+                % (case_dir, listing))
         shutil.rmtree(str(case_dir))
     sem_dir = case_dir / "sem_case"
-    dfdm_output = case_dir / ("DFDM_OUTPUT_ak135_mrr_hdur80_nex%d_nez%d" %
-                              (int(cfg["dfdm_nex"]), int(cfg["dfdm_nez"])))
+    has_dfdm = "dfdm_nex" in cfg
     copy_sem_data(sem_dir)
 
-    dfdm = BASE_DFDM.read_text()
-    dfdm = replace_key(dfdm, "dt", "%.12g" % float(cfg["dfdm_dt"]))
-    dfdm = replace_key(dfdm, "nt", "%d" % int(cfg["dfdm_nt"]))
-    dfdm = replace_key(dfdm, "output_dir", "\"%s\"" % dfdm_output.relative_to(ROOT).as_posix())
-    dfdm = replace_key(dfdm, "nex", "%d" % int(cfg["dfdm_nex"]))
-    dfdm = replace_key(dfdm, "ney", "%d" % int(cfg["dfdm_ney"]))
-    dfdm = replace_key(dfdm, "nez", "%d" % int(cfg["dfdm_nez"]))
-    dfdm = set_section_key(dfdm, "mesh3d", "full_shell_nez_decoupled", "true")
-    dfdm = set_section_key(dfdm, "solver", "axis_kernel_mode", "\"fixed\"")
-    dfdm = set_section_key(dfdm, "solver", "sat_face_cache", "\"on\"")
-    dfdm_config = case_dir / "dfdm_ak135_mrr_hdur80_refined.toml"
-    dfdm_config.write_text(dfdm)
-
-    par_path = sem_dir / "DATA" / "Par_file"
-    par = par_path.read_text()
-    par = replace_par_key(par, "NEX_XI", "%d" % int(cfg["sem_nex"]))
-    par = replace_par_key(par, "NEX_ETA", "%d" % int(cfg["sem_nex"]))
-    par = replace_par_key(par, "NPROC_XI", "8")
-    par = replace_par_key(par, "NPROC_ETA", "8")
-    par = replace_par_key(par, "DT", "%.12gd0" % float(cfg["sem_dt"]))
-    par = replace_par_key(par, "RECORD_LENGTH_IN_MINUTES", "%.12gd0" % float(cfg["record_minutes"]))
-    par_path.write_text(par)
+    check_sem_decomposition(name, cfg)
 
     meta = {
         "name": name,
@@ -111,18 +133,49 @@ def stage_case(name, cfg, force):
         "source": cfg["source"],
         "equivalent_frequency_hz": cfg["equivalent_frequency_hz"],
         "record_minutes": float(cfg["record_minutes"]),
-        "dfdm_config": dfdm_config.relative_to(ROOT).as_posix(),
-        "dfdm_output": dfdm_output.relative_to(ROOT).as_posix(),
-        "dfdm_nex": int(cfg["dfdm_nex"]),
-        "dfdm_ney": int(cfg["dfdm_ney"]),
-        "dfdm_nez_shell": int(cfg["dfdm_nez"]),
-        "dfdm_dt": float(cfg["dfdm_dt"]),
-        "dfdm_nt": int(cfg["dfdm_nt"]),
         "sem_dir": sem_dir.relative_to(ROOT).as_posix(),
         "sem_nex": int(cfg["sem_nex"]),
+        "sem_nproc": int(cfg["sem_nproc"]),
         "sem_dt": float(cfg["sem_dt"]),
+        "has_dfdm": has_dfdm,
         "slurm": cfg["slurm"],
     }
+
+    if has_dfdm:
+        dfdm_output = case_dir / ("DFDM_OUTPUT_ak135_mrr_hdur80_nex%d_nez%d" %
+                                  (int(cfg["dfdm_nex"]), int(cfg["dfdm_nez"])))
+        dfdm = BASE_DFDM.read_text()
+        dfdm = replace_key(dfdm, "dt", "%.12g" % float(cfg["dfdm_dt"]))
+        dfdm = replace_key(dfdm, "nt", "%d" % int(cfg["dfdm_nt"]))
+        dfdm = replace_key(dfdm, "output_dir", "\"%s\"" % dfdm_output.relative_to(ROOT).as_posix())
+        dfdm = replace_key(dfdm, "nex", "%d" % int(cfg["dfdm_nex"]))
+        dfdm = replace_key(dfdm, "ney", "%d" % int(cfg["dfdm_ney"]))
+        dfdm = replace_key(dfdm, "nez", "%d" % int(cfg["dfdm_nez"]))
+        dfdm = set_section_key(dfdm, "mesh3d", "full_shell_nez_decoupled", "true")
+        dfdm = set_section_key(dfdm, "solver", "axis_kernel_mode", "\"fixed\"")
+        dfdm = set_section_key(dfdm, "solver", "sat_face_cache", "\"on\"")
+        dfdm_config = case_dir / "dfdm_ak135_mrr_hdur80_refined.toml"
+        dfdm_config.write_text(dfdm)
+        meta.update({
+            "dfdm_config": dfdm_config.relative_to(ROOT).as_posix(),
+            "dfdm_output": dfdm_output.relative_to(ROOT).as_posix(),
+            "dfdm_nex": int(cfg["dfdm_nex"]),
+            "dfdm_ney": int(cfg["dfdm_ney"]),
+            "dfdm_nez_shell": int(cfg["dfdm_nez"]),
+            "dfdm_dt": float(cfg["dfdm_dt"]),
+            "dfdm_nt": int(cfg["dfdm_nt"]),
+        })
+
+    par_path = sem_dir / "DATA" / "Par_file"
+    par = par_path.read_text()
+    par = replace_par_key(par, "NEX_XI", "%d" % int(cfg["sem_nex"]))
+    par = replace_par_key(par, "NEX_ETA", "%d" % int(cfg["sem_nex"]))
+    par = replace_par_key(par, "NPROC_XI", "%d" % int(cfg["sem_nproc"]))
+    par = replace_par_key(par, "NPROC_ETA", "%d" % int(cfg["sem_nproc"]))
+    par = replace_par_key(par, "DT", "%.12gd0" % float(cfg["sem_dt"]))
+    par = replace_par_key(par, "RECORD_LENGTH_IN_MINUTES", "%.12gd0" % float(cfg["record_minutes"]))
+    par_path.write_text(par)
+
     (case_dir / "case_metadata.json").write_text(json.dumps(meta, indent=2) + "\n")
     return meta
 
@@ -132,6 +185,8 @@ def main():
     parser.add_argument("--case", action="append", help="Case name to stage; default stages physical cases.")
     parser.add_argument("--all", action="store_true", help="Stage every case, including fixture_smoke.")
     parser.add_argument("--force", action="store_true", help="Remove existing run directories before staging.")
+    parser.add_argument("--discard-results", action="store_true",
+                        help="Allow --force to delete a case directory that already holds solver outputs.")
     args = parser.parse_args()
 
     cases = load_cases()
@@ -146,12 +201,18 @@ def main():
         raise SystemExit("unknown case(s): %s" % ", ".join(unknown))
 
     RUNS.mkdir(exist_ok=True)
-    manifest = {"cases": [stage_case(name, cases[name], args.force) for name in names]}
+    manifest = {"cases": [stage_case(name, cases[name], args.force, args.discard_results)
+                          for name in names]}
     (RUNS / "resolved_ppw_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     for case in manifest["cases"]:
         print(case["name"])
-        print("  DFDM config: %s" % case["dfdm_config"])
-        print("  SEM case:    %s" % case["sem_dir"])
+        if case["has_dfdm"]:
+            print("  DFDM config: %s" % case["dfdm_config"])
+        else:
+            print("  DFDM config: (none; SEM-only case)")
+        print("  SEM case:    %s (NEX %d, NPROC %d, DT %g, %d ranks)" %
+              (case["sem_dir"], case["sem_nex"], case["sem_nproc"], case["sem_dt"],
+               case["slurm"]["sem_tasks"]))
     return 0
 
 

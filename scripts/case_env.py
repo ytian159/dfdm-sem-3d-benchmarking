@@ -21,14 +21,19 @@ def main():
         "CASE_NAME": meta["name"],
         "CASE_DIR": str((ROOT / "runs" / args.case).resolve()),
         "SEM_DIR": str((ROOT / meta["sem_dir"]).resolve()),
-        "DFDM_CONFIG": str((ROOT / meta["dfdm_config"]).resolve()),
-        "DFDM_OUTPUT": str((ROOT / meta["dfdm_output"]).resolve()),
+        "SEM_NEX": meta["sem_nex"],
         "SEM_NODES": slurm["sem_nodes"],
         "SEM_TASKS": slurm["sem_tasks"],
-        "DFDM_NODES": slurm["dfdm_nodes"],
-        "DFDM_TASKS": slurm["dfdm_tasks"],
         "CPUS_PER_TASK": slurm["cpus_per_task"],
+        "HAS_DFDM": "1" if meta.get("has_dfdm", True) else "0",
     }
+    if meta.get("has_dfdm", True):
+        values.update({
+            "DFDM_CONFIG": str((ROOT / meta["dfdm_config"]).resolve()),
+            "DFDM_OUTPUT": str((ROOT / meta["dfdm_output"]).resolve()),
+            "DFDM_NODES": slurm["dfdm_nodes"],
+            "DFDM_TASKS": slurm["dfdm_tasks"],
+        })
     for key, value in values.items():
         print("export %s=%s" % (key, shlex.quote(str(value))))
     return 0

@@ -12,6 +12,11 @@ fi
 
 eval "$(python3 "$repo/scripts/case_env.py" "$case_name")"
 
+if [[ "${HAS_DFDM:-1}" != "1" ]]; then
+  echo "Case $case_name is SEM-only (no DFDM arm); nothing to run." >&2
+  exit 2
+fi
+
 export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 export MPICH_MAX_THREAD_SAFETY="${MPICH_MAX_THREAD_SAFETY:-serialized}"
