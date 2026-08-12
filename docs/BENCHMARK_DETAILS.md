@@ -35,7 +35,7 @@ Two gotchas are handled in the tooling rather than left to the user: `NEX < 128`
 
 The `paper_*` cases take the time step from SPECFEM's own stability estimate: `DT=0.15` is proven stable and accurate through `NEX=192`, and `0.075` at `NEX=256`.
 
-The `pilot_*` and `target_*` cases instead use the PREM-ladder convention `DT = 9.6/NEX` (0.04 at `NEX=256`, 0.03 at `NEX=320`), which sits 4 to 6 times below the stability estimate. It exists for cost comparability within that ladder and makes those SEM arms far more expensive than a correctly sized reference: the pilot bills about 3.4 node-hours against the anchor's 0.147. Cost ratios quoted from the `pilot_*` or `target_*` cases are not the published ratios.
+The `pilot_*` and `target_*` cases instead use the PREM-ladder convention `DT = 9.6/NEX` (0.04 at `NEX=256`, 0.03 at `NEX=320`), which sits 4 to 6 times below the stability estimate. It exists for cost comparability within that ladder and makes those SEM arms far more expensive than a correctly sized reference: the pilot bills 2.1 node-hours and the target 27.8 against the anchor's 0.147. Cost ratios quoted from the `pilot_*` or `target_*` cases are not the published ratios.
 
 ### The perfect-sphere build constant
 
@@ -57,17 +57,55 @@ The DFDM submodule tracks `ytian159/DFDM3D` branch `main`. The pinned milestone 
 
 The case definitions live in `cases/ak135_mrr_hdur80_f0125/case_matrix.json`.
 
-- `fixture_smoke`: small synthetic fixture for smoke validation only.
-- `paper_sem_nex64_4800s`: SEM-only, the published 0.147 node-hour cost anchor.
-- `paper_sem_nex96_4800s`: SEM-only, the convergence rung certifying that anchor (0.503 node-hours).
-- `pilot_nex60_sem256_720s`: DFDM NEX60/NEZ30 against SPECFEM NEX256 for 10 record minutes.
-- `target_nex75_sem320_4800s`: DFDM NEX75/NEZ30 against SPECFEM NEX320 for 80 record minutes.
+| case | arms | SEM mesh | SEM `DT` | record | layout | SEM cost (solver only) |
+|---|---|---|---|---|---|---|
+| `paper_sem_nex64_4800s` | SEM | `NEX` 64 | 0.15 | 80 min | 24 ranks, shared node | 0.147 node-h (47 min) |
+| `paper_sem_nex96_4800s` | SEM | `NEX` 96 | 0.10 | 80 min | 24 ranks, shared node | 0.503 node-h (2.7 h) |
+| `pilot_nex60_sem256_720s` | SEM + DFDM | `NEX` 256 | 0.04 | 10 min | 384 ranks, 3 nodes | 2.1 node-h |
+| `target_nex75_sem320_4800s` | SEM + DFDM | `NEX` 320 | 0.03 | 80 min | 384 ranks, 3 nodes | 27.8 node-h |
+| `fixture_smoke` | synthetic | n/a | n/a | n/a | n/a | none |
+
+Meshing is on top of these and is not negligible for the large meshes: the `NEX` 256 mesher takes about 26 minutes and writes a 35 GB database, against seconds and a few hundred MB at `NEX` 64.
 
 A case is SEM-only when it declares no `dfdm_*` keys; `scripts/run_dfdm_slurm.sh` refuses such a case and `scripts/run_case_slurm.sh` skips the DFDM stage. Each case carries its own `sem_nproc`, and staging checks the two constraints SPECFEM imposes: `NEX` divisible by `8 * NPROC`, and `sem_tasks` equal to `6 * NPROC^2`.
 
 Each staged case writes a `runs/<case>/case_metadata.json` file. The run wrappers read this metadata through `scripts/case_env.py`, so solver commands do not need hard-coded paths.
 
 Restaging with `--force` refuses to delete a case directory that already holds seismograms, DFDM traces, figures, or score and performance JSON; `--discard-results` overrides that.
+
+## Running the DFDM Comparison Cases
+
+Build DFDM once (`bash scripts/build_dfdm.sh`), then either run everything in one job:
+
+```bash
+sbatch -A <account> -C cpu -q regular -t 04:00:00 -N 4 --exclusive \
+  --ntasks-per-node=128 scripts/run_case_slurm.sh pilot_nex60_sem256_720s
+```
+
+or run the arms separately with `scripts/run_sem_slurm.sh` and `scripts/run_dfdm_slurm.sh` (same sbatch shape, add `--export=ALL,NO_STAGE=1`), then compare finished outputs with:
+
+```bash
+bash scripts/compare_case.sh pilot_nex60_sem256_720s
+```
+
+For the target case use `-t 48:00:00` and the case name `target_nex75_sem320_4800s`.
+
+The `paper_*` cases use a fraction of one node and belong in a shared allocation instead:
+
+```bash
+sbatch -A <account> -C cpu -q shared -t 03:00:00 -N 1 -n 24 -c 2 \
+  --export=ALL,NO_STAGE=1 scripts/run_sem_slurm.sh paper_sem_nex64_4800s
+```
+
+## Options
+
+- `NO_STAGE=1`: do not stage or restage before running a solver wrapper.
+- `FORCE_STAGE=1`: restage when using `scripts/run_sem_slurm.sh` or `scripts/run_dfdm_slurm.sh`.
+- `SPECFEM_ROOT=/path/to/specfem3d_globe`: run-time override for an already-built SPECFEM tree (must contain `bin/xmeshfem3D` and `bin/xspecfem3D`).
+- `DFDM_EXE=/path/to/dfdm_elastic3d`: run-time override for an already-built DFDM executable.
+- `COMPARE_DT=0.1`: comparison resampling interval in seconds.
+- `SKIP_SPHERE_CHECK=1`: run SEM against a build not prepared with `ASSUME_PERFECT_SPHERE`. Only for experiments that deliberately want geocentric station conversion; it invalidates the DFDM comparison.
+- `SOURCE_SHIFT=120`: source time shift used by `scripts/compare_sem_members.sh` (1.5 times the half duration; use 60 for an hdur-40 protocol).
 
 ## Staged Run Tree
 
