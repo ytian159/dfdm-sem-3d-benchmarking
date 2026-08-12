@@ -2,7 +2,6 @@
 
 This repository stages and runs the AK135 Mrr `f0=0.0125` (80 s half duration) global benchmark against SPECFEM3D_GLOBE. It covers two things:
 
-- **Reproducing published SPECFEM numbers**, in particular the 0.147 node-hour cost anchor, using the `paper_*` cases.
 - **Comparing DFDM 3D waveforms against SPECFEM**, using the `pilot_*` and `target_*` cases.
 
 Read [the note on cost conventions](#cost-conventions) before quoting any cost ratio from this repository: the two case families bill very differently on purpose.
