@@ -10,6 +10,7 @@ python3 "$repo/scripts/stage_cases.py" --case fixture_smoke --force --discard-re
 python3 "$repo/scripts/create_smoke_outputs.py" "$repo/runs/fixture_smoke"
 COMPARE_DT=1.0 "$repo/scripts/compare_case.sh" fixture_smoke
 python3 "$repo/scripts/check_no_external_paths.py"
+python3 "$repo/scripts/install_sem_reference.py" --verify
 
 test -s "$repo/runs/fixture_smoke/resolved_ppw_sem_dfdm_Z.png"
 test -s "$repo/runs/fixture_smoke/resolved_ppw_sem_dfdm_diff_Z.png"

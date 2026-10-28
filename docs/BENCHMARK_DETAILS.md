@@ -5,7 +5,9 @@
 - `external/dfdm_3d_elastic`: DFDM3D solver submodule (the path is retained for compatibility with existing benchmark scripts).
 - `external/specfem3d_globe`: public SPECFEM3D_GLOBE submodule.
 - `cases/ak135_mrr_hdur80_f0125`: base DFDM TOML, SPECFEM `DATA` files, and case matrix.
+- `cases/ak135_mrr_hdur80_f0125/sem_ref_nex320_4800s`: shipped SEM-Ref seismograms for `target_nex75_sem320_4800s`, with the `DATA` that produced them (see its README).
 - `scripts/stage_cases.py`: creates repo-relative run directories under `runs/`.
+- `scripts/install_sem_reference.py`: installs shipped or on-disk SPECFEM seismograms into a staged case instead of running SPECFEM.
 - `scripts/prepare_specfem.sh`: sets the required `ASSUME_PERFECT_SPHERE` build constant.
 - `scripts/run_sem_slurm.sh`: runs only SPECFEM mesher and solver for a staged case, then reports cost.
 - `scripts/run_dfdm_slurm.sh`: runs only DFDM for a staged case.
@@ -21,7 +23,7 @@
 
 The published hdur-80 SEM cost anchor is `NEX=64`, `DT=0.15`, 4800-second records on 24 ranks, billed at 0.147 node-hours. It is staged by the `paper_sem_nex64_4800s` case, whose `DATA` directory is byte-identical to the campaign run that produced that number.
 
-A clean run of the staged case on Perlmutter (2026-08-12, `shared_interactive`, 24 ranks at `-c 2`) reproduced it: 2828.8 s solver wall over 33000 steps at 85.5 ms/step, 0.1473 node-hours, against the original run's 2832.7 s and 0.1475. Its seismograms correlate with the original run's at 1.00000 on all 36 N/Z components, and the case passes the gate against the `NEX=96` rung 36/36 with a worst full-trace correlation of 0.99812 and PKP-window correlations of 0.99998.
+A clean run of the staged case on Perlmutter (2026-08-12, `shared_interactive`, 24 ranks at `-c 2`) reproduced it: 2828.8 s solver wall over 33000 steps at 85.5 ms/step, 0.1473 node-hours, against the original run's 2832.7 s and 0.1475. Its seismograms correlate with the original run's at 1.00000 on all 36 N/Z components, and the case passes the gate against the `NEX=96` rung 36/36 with a worst full-trace correlation of 0.99812 and PKP-window correlations of 0.99998. Against the shipped `NEX=320` SEM-Ref it passes 36/36 with a worst full-trace correlation of 0.99843 and PKP-window minima of 0.99993 (Z) and 0.99990 (N).
 
 Two conventions have to match for the number to come out right.
 
@@ -71,6 +73,8 @@ Meshing is on top of these and is not negligible for the large meshes: the `NEX`
 
 A case is SEM-only when it declares no `dfdm_*` keys; `scripts/run_dfdm_slurm.sh` refuses such a case and `scripts/run_case_slurm.sh` skips the DFDM stage. Each case carries its own `sem_nproc`, and staging checks the two constraints SPECFEM imposes: `NEX` divisible by `8 * NPROC`, and `sem_tasks` equal to `6 * NPROC^2`.
 
+A case whose SEM seismograms ship with the repository names the set with `sem_reference`; only `target_nex75_sem320_4800s` does.
+
 Each staged case writes a `runs/<case>/case_metadata.json` file. The run wrappers read this metadata through `scripts/case_env.py`, so solver commands do not need hard-coded paths.
 
 Restaging with `--force` refuses to delete a case directory that already holds seismograms, DFDM traces, figures, or score and performance JSON; `--discard-results` overrides that.
@@ -92,6 +96,8 @@ bash scripts/compare_case.sh pilot_nex60_sem256_720s
 
 For the target case use `-t 48:00:00` and the case name `target_nex75_sem320_4800s`.
 
+The target case's SEM arm ships with the repository, so its DFDM arm can run alone: submit `scripts/run_case_slurm.sh target_nex75_sem320_4800s` with the same sbatch shape plus `--export=ALL,SEM_SEISMOGRAMS=shipped`. The job installs the shipped seismograms, runs DFDM, and compares, and needs no SPECFEM build. When resubmitting after a failed attempt, also export `NO_STAGE=1`; otherwise restaging refuses the case directory because it already holds the installed seismograms.
+
 The `paper_*` cases use a fraction of one node and belong in a shared allocation instead:
 
 ```bash
@@ -103,6 +109,7 @@ sbatch -A <account> -C cpu -q shared -t 03:00:00 -N 1 -n 24 -c 2 \
 
 - `NO_STAGE=1`: do not stage or restage before running a solver wrapper.
 - `FORCE_STAGE=1`: restage when using `scripts/run_sem_slurm.sh` or `scripts/run_dfdm_slurm.sh`.
+- `SEM_SEISMOGRAMS=shipped`: install the case's shipped SEM seismograms instead of running SPECFEM (read by `scripts/run_sem_slurm.sh`, and so by `scripts/run_case_slurm.sh`). `SEM_SEISMOGRAMS=/path/to/OUTPUT_FILES` installs an earlier run's seismograms from disk instead; the directory needs the run's `DATA` next to it. Either way the installer refuses traces produced by different `DATA` than the case's staged `DATA`, records their source in `runs/<case>/sem_seismograms.json`, and writes no `sem_perf.json`.
 - `SPECFEM_ROOT=/path/to/specfem3d_globe`: run-time override for an already-built SPECFEM tree (must contain `bin/xmeshfem3D` and `bin/xspecfem3D`).
 - `DFDM_EXE=/path/to/dfdm_elastic3d`: run-time override for an already-built DFDM executable.
 - `COMPARE_DT=0.1`: comparison resampling interval in seconds.

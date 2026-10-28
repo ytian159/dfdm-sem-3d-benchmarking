@@ -63,6 +63,18 @@ def set_section_key(text, section, key, value):
     return text[:match.end()] + block + text[end:]
 
 
+def render_sem_par(cfg):
+    """Par_file text that staging writes for this case."""
+    par = (BASE_SEM_DATA / "Par_file").read_text()
+    par = replace_par_key(par, "NEX_XI", "%d" % int(cfg["sem_nex"]))
+    par = replace_par_key(par, "NEX_ETA", "%d" % int(cfg["sem_nex"]))
+    par = replace_par_key(par, "NPROC_XI", "%d" % int(cfg["sem_nproc"]))
+    par = replace_par_key(par, "NPROC_ETA", "%d" % int(cfg["sem_nproc"]))
+    par = replace_par_key(par, "DT", "%.12gd0" % float(cfg["sem_dt"]))
+    par = replace_par_key(par, "RECORD_LENGTH_IN_MINUTES", "%.12gd0" % float(cfg["record_minutes"]))
+    return par
+
+
 def copy_sem_data(sem_dir):
     data_dir = sem_dir / "DATA"
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -166,15 +178,10 @@ def stage_case(name, cfg, force, discard_results=False):
             "dfdm_nt": int(cfg["dfdm_nt"]),
         })
 
-    par_path = sem_dir / "DATA" / "Par_file"
-    par = par_path.read_text()
-    par = replace_par_key(par, "NEX_XI", "%d" % int(cfg["sem_nex"]))
-    par = replace_par_key(par, "NEX_ETA", "%d" % int(cfg["sem_nex"]))
-    par = replace_par_key(par, "NPROC_XI", "%d" % int(cfg["sem_nproc"]))
-    par = replace_par_key(par, "NPROC_ETA", "%d" % int(cfg["sem_nproc"]))
-    par = replace_par_key(par, "DT", "%.12gd0" % float(cfg["sem_dt"]))
-    par = replace_par_key(par, "RECORD_LENGTH_IN_MINUTES", "%.12gd0" % float(cfg["record_minutes"]))
-    par_path.write_text(par)
+    if "sem_reference" in cfg:
+        meta["sem_reference"] = cfg["sem_reference"]
+
+    (sem_dir / "DATA" / "Par_file").write_text(render_sem_par(cfg))
 
     (case_dir / "case_metadata.json").write_text(json.dumps(meta, indent=2) + "\n")
     return meta

@@ -12,6 +12,18 @@ fi
 
 eval "$(python3 "$repo/scripts/case_env.py" "$case_name")"
 
+# SEM_SEISMOGRAMS=shipped installs the seismograms that ship with the repo; a directory
+# installs an earlier run's OUTPUT_FILES. Either way SPECFEM is not run.
+if [[ -n "${SEM_SEISMOGRAMS:-}" ]]; then
+  if [[ "$SEM_SEISMOGRAMS" == "shipped" ]]; then
+    python3 "$repo/scripts/install_sem_reference.py" "$case_name"
+  else
+    python3 "$repo/scripts/install_sem_reference.py" "$case_name" --from "$SEM_SEISMOGRAMS"
+  fi
+  echo "=== SEM seismograms installed; SPECFEM not run ==="
+  exit 0
+fi
+
 export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 export MPICH_MAX_THREAD_SAFETY="${MPICH_MAX_THREAD_SAFETY:-serialized}"

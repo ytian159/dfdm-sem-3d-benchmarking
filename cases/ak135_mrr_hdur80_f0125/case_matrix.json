@@ -85,8 +85,9 @@
     },
     {
       "name": "target_nex75_sem320_4800s",
-      "note": "Target resolved-PPW AK135 Mrr CMT case: DFDM NEX75/NEZ30 against SPECFEM NEX320 for 80 record minutes. The SEM arm is the paper's converged NEX320 reference configuration.",
+      "note": "Target resolved-PPW AK135 Mrr CMT case: DFDM NEX75/NEZ30 against SPECFEM NEX320 for 80 record minutes. The SEM arm is the paper's converged NEX320 reference configuration; its seismograms ship in sem_ref_nex320_4800s.",
       "source": "AK135 Mrr CMT, stock SPECFEM quasi-Heaviside, half_duration=80s",
+      "sem_reference": "sem_ref_nex320_4800s",
       "equivalent_frequency_hz": 0.0125,
       "record_minutes": 80.0,
       "dfdm_nex": 75,
