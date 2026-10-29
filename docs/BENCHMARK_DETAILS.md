@@ -78,20 +78,27 @@ Restaging with `--force` refuses to delete a case directory that already holds s
 
 ## Running the DFDM Comparison Cases
 
-Build DFDM once (`bash scripts/build_dfdm.sh`), then run a case in one job:
+Build DFDM once (`bash scripts/build_dfdm.sh`), then run a case in an interactive allocation, the default on Perlmutter:
 
 ```bash
-sbatch -A <account> -C cpu -q regular -t 01:00:00 -N 4 --exclusive \
-  scripts/run_case_slurm.sh dfdm_4800s
+salloc -A <account> -C cpu -q interactive -N 4 -t 01:00:00 \
+  bash -lc "cd $PWD && scripts/run_case_slurm.sh dfdm_4800s"
 ```
 
-The job installs the shipped SEM-Ref seismograms, runs DFDM on 504 ranks, prints the DFDM cost, and compares. With `--export=ALL,SEM_SEISMOGRAMS=run` it recomputes the SEM-Ref first (27.8 node-hours, about 9.5 hours on 3 nodes; allow `-t 12:00:00`). `bash scripts/compare_case.sh <case>` redoes the comparison from finished outputs.
+The run installs the shipped SEM-Ref seismograms, runs DFDM on 504 ranks, prints the DFDM cost, and compares. `bash scripts/compare_case.sh <case>` redoes the comparison from finished outputs.
 
-The `paper_*` cases use a fraction of one node and belong in a shared allocation instead:
+The `paper_*` cases use a fraction of one node and run in a shared interactive allocation:
 
 ```bash
-sbatch -A <account> -C cpu -q shared -t 03:00:00 -N 1 -n 24 -c 2 \
-  --export=ALL,NO_STAGE=1 scripts/run_sem_slurm.sh paper_sem_nex64_4800s
+salloc -A <account> -C cpu -q shared_interactive -N 1 -n 24 -c 2 -t 03:00:00 \
+  bash -lc "cd $PWD && NO_STAGE=1 scripts/run_sem_slurm.sh paper_sem_nex64_4800s"
+```
+
+The interactive queues allow at most 4 nodes for 4 hours. The one job beyond that is recomputing the SEM-Ref (27.8 node-hours, about 9.5 hours on 3 nodes), which goes in a batch job:
+
+```bash
+sbatch -A <account> -C cpu -q regular -t 12:00:00 -N 4 --exclusive \
+  --export=ALL,SEM_SEISMOGRAMS=run scripts/run_case_slurm.sh dfdm_4800s
 ```
 
 ## Options

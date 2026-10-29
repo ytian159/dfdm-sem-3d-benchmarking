@@ -37,16 +37,16 @@ The SEM reference (SEM-Ref) is SPECFEM at NEX 320 with 80-minute records. It tak
 
 ## Running the benchmarks
 
-Each run stages the case (input files under `runs/<case>/`), runs the solver inside a Slurm allocation, and compares the output. The run scripts stage a case automatically the first time.
+Each run stages the case (input files under `runs/<case>/`), runs the solver inside a Slurm allocation, and compares the output. The run scripts stage a case automatically the first time. On Perlmutter every benchmark fits the interactive queues, which start within minutes; the same scripts also run under `sbatch` with the same node counts.
 
 ### DFDM against the SEM reference
 
 ```bash
-sbatch -A <account> -C cpu -q regular -t 01:00:00 -N 4 --exclusive \
-  scripts/run_case_slurm.sh dfdm_4800s
+salloc -A <account> -C cpu -q interactive -N 4 -t 01:00:00 \
+  bash -lc "cd $PWD && scripts/run_case_slurm.sh dfdm_4800s"
 ```
 
-The job installs the SEM-Ref seismograms, runs DFDM on 504 ranks, and scores it. The output includes:
+The run installs the SEM-Ref seismograms, runs DFDM on 504 ranks, and scores it. The output includes:
 
 ```text
 layout          : 504 ranks x 2 cpus on 4 nodes
@@ -58,7 +58,7 @@ PKP window  Z min / N min    : 0.99926 / 0.99936
 VERDICT: PASS (36/36 components)
 ```
 
-The quick check fits an interactive allocation:
+The quick check:
 
 ```bash
 salloc -A <account> -C cpu -q interactive -N 4 -t 00:30:00 \
@@ -123,7 +123,7 @@ Environment variables, set in front of a command or with `--export=ALL,NAME=valu
 
 | variable | effect |
 |---|---|
-| `SEM_SEISMOGRAMS=run` | compute the SEM-Ref with SPECFEM instead of using the shipped seismograms (27.8 node-hours on 3 nodes) |
+| `SEM_SEISMOGRAMS=run` | compute the SEM-Ref with SPECFEM instead of using the shipped seismograms (27.8 node-hours, about 9.5 hours on 3 nodes; longer than the interactive limit, so use `sbatch -q regular -t 12:00:00`) |
 | `SEM_SEISMOGRAMS=/path/to/OUTPUT_FILES` | use SPECFEM seismograms from an earlier run; the run's `DATA` directory must sit next to `OUTPUT_FILES` and match the case |
 | `SPECFEM_ROOT=/path/to/specfem3d_globe` | use an existing SPECFEM build (`bin/xmeshfem3D`, `bin/xspecfem3D`, perfect-sphere constant set) |
 | `DFDM_EXE=/path/to/dfdm_elastic3d` | use an existing DFDM build |
@@ -152,4 +152,4 @@ Then restage with `python3 scripts/stage_cases.py --case <name> --force` (add `-
 
 **Earth model.** `MODEL` in `base/sem_DATA/Par_file` and `material.model` in the base DFDM file; both must name the same model. The DFDM mesh follows AK135's layers, so another model needs a new mesh.
 
-**Other machines.** Build both codes, point the scripts at them with `SPECFEM_ROOT` and `DFDM_EXE`, and adapt the `sbatch` lines. The SEM cost report assumes 256 CPU slots per node (`SLOTS_PER_NODE` in `scripts/sem_cost.py`).
+**Other machines.** Build both codes, point the scripts at them with `SPECFEM_ROOT` and `DFDM_EXE`, and adapt the `salloc` lines to your queues. The SEM cost report assumes 256 CPU slots per node (`SLOTS_PER_NODE` in `scripts/sem_cost.py`).
