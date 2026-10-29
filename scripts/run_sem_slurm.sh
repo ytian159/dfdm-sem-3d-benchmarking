@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-case_name="${1:-pilot_nex60_sem256_720s}"
+case_name="${1:?usage: run_sem_slurm.sh CASE}"
 
 if [[ "${NO_STAGE:-0}" != "1" ]]; then
   if [[ "${FORCE_STAGE:-0}" == "1" || ! -s "$repo/runs/$case_name/case_metadata.json" ]]; then
@@ -12,13 +12,17 @@ fi
 
 eval "$(python3 "$repo/scripts/case_env.py" "$case_name")"
 
-# SEM_SEISMOGRAMS=shipped installs the seismograms that ship with the repo; a directory
-# installs an earlier run's OUTPUT_FILES. Either way SPECFEM is not run.
-if [[ -n "${SEM_SEISMOGRAMS:-}" ]]; then
-  if [[ "$SEM_SEISMOGRAMS" == "shipped" ]]; then
+# Cases whose SEM seismograms ship with the repo install them instead of running SPECFEM;
+# SEM_SEISMOGRAMS=run runs SPECFEM anyway, and a directory installs an earlier run's OUTPUT_FILES.
+sem_seismograms="${SEM_SEISMOGRAMS:-}"
+if [[ -z "$sem_seismograms" && -n "$SEM_REFERENCE" ]]; then
+  sem_seismograms=shipped
+fi
+if [[ -n "$sem_seismograms" && "$sem_seismograms" != "run" ]]; then
+  if [[ "$sem_seismograms" == "shipped" ]]; then
     python3 "$repo/scripts/install_sem_reference.py" "$case_name"
   else
-    python3 "$repo/scripts/install_sem_reference.py" "$case_name" --from "$SEM_SEISMOGRAMS"
+    python3 "$repo/scripts/install_sem_reference.py" "$case_name" --from "$sem_seismograms"
   fi
   echo "=== SEM seismograms installed; SPECFEM not run ==="
   exit 0

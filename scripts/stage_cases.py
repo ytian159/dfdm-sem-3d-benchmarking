@@ -2,7 +2,9 @@
 """Stage SEM and DFDM benchmark cases using only repo-relative paths."""
 
 import argparse
+import hashlib
 import json
+import lzma
 import re
 import shutil
 from pathlib import Path
@@ -10,7 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE_ROOT = ROOT / "cases" / "ak135_mrr_hdur80_f0125"
-BASE_DFDM = CASE_ROOT / "base" / "dfdm_ak135_mrr_heaviside_hdur80_base.toml"
+BASE_DFDM = CASE_ROOT / "base" / "dfdm_ak135f_mrr_hdur80.toml"
+DFDM_MESH = CASE_ROOT / "dfdm_mesh" / "mesh_bricks.txt.xz"
 BASE_SEM_DATA = CASE_ROOT / "base" / "sem_DATA"
 MATRIX = CASE_ROOT / "case_matrix.json"
 RUNS = ROOT / "runs"
@@ -44,23 +47,16 @@ def replace_par_key(text, key, value):
     raise ValueError("missing Par_file key %s" % key)
 
 
-def set_section_key(text, section, key, value):
-    section_re = re.compile(r"^\[%s\]\s*$" % re.escape(section), re.M)
-    match = section_re.search(text)
-    if not match:
-        raise ValueError("missing section [%s]" % section)
-
-    next_match = re.search(r"^\[.+\]\s*$", text[match.end():], re.M)
-    end = len(text) if next_match is None else match.end() + next_match.start()
-    block = text[match.end():end]
-    key_re = re.compile(r"^(\s*%s\s*=\s*)(.+)$" % re.escape(key), re.M)
-    if key_re.search(block):
-        block = key_re.sub(r"\g<1>%s" % value, block, count=1)
-    else:
-        if not block.endswith("\n"):
-            block += "\n"
-        block = "\n%s = %s" % (key, value) + block
-    return text[:match.end()] + block + text[end:]
+def stage_dfdm_mesh(dest):
+    """Decompress the shipped DFDM mesh and check it against its SHA256SUMS entry."""
+    want = (DFDM_MESH.parent / "SHA256SUMS").read_text().split()[0]
+    h = hashlib.sha256()
+    with lzma.open(str(DFDM_MESH), "rb") as f_in, open(str(dest), "wb") as f_out:
+        for block in iter(lambda: f_in.read(1 << 20), b""):
+            h.update(block)
+            f_out.write(block)
+    if h.hexdigest() != want:
+        raise SystemExit("%s does not match its SHA256SUMS entry" % DFDM_MESH.relative_to(ROOT))
 
 
 def render_sem_par(cfg):
@@ -104,7 +100,7 @@ def check_sem_decomposition(name, cfg):
 
 RESULT_GLOBS = [
     "sem_case/OUTPUT_FILES/*.sem.ascii",
-    "DFDM_OUTPUT_*/*.txt",
+    "DFDM_OUTPUT*/*.txt",
     "*.png",
     "*_perf.json",
     "*_metrics.md",
@@ -134,7 +130,7 @@ def stage_case(name, cfg, force, discard_results=False):
                 % (case_dir, listing))
         shutil.rmtree(str(case_dir))
     sem_dir = case_dir / "sem_case"
-    has_dfdm = "dfdm_nex" in cfg
+    has_dfdm = "dfdm_nt" in cfg
     copy_sem_data(sem_dir)
 
     check_sem_decomposition(name, cfg)
@@ -154,26 +150,20 @@ def stage_case(name, cfg, force, discard_results=False):
     }
 
     if has_dfdm:
-        dfdm_output = case_dir / ("DFDM_OUTPUT_ak135_mrr_hdur80_nex%d_nez%d" %
-                                  (int(cfg["dfdm_nex"]), int(cfg["dfdm_nez"])))
+        dfdm_output = case_dir / "DFDM_OUTPUT"
+        dfdm_mesh = case_dir / "dfdm_mesh_bricks.txt"
+        stage_dfdm_mesh(dfdm_mesh)
         dfdm = BASE_DFDM.read_text()
         dfdm = replace_key(dfdm, "dt", "%.12g" % float(cfg["dfdm_dt"]))
         dfdm = replace_key(dfdm, "nt", "%d" % int(cfg["dfdm_nt"]))
         dfdm = replace_key(dfdm, "output_dir", "\"%s\"" % dfdm_output.relative_to(ROOT).as_posix())
-        dfdm = replace_key(dfdm, "nex", "%d" % int(cfg["dfdm_nex"]))
-        dfdm = replace_key(dfdm, "ney", "%d" % int(cfg["dfdm_ney"]))
-        dfdm = replace_key(dfdm, "nez", "%d" % int(cfg["dfdm_nez"]))
-        dfdm = set_section_key(dfdm, "mesh3d", "full_shell_nez_decoupled", "true")
-        dfdm = set_section_key(dfdm, "solver", "axis_kernel_mode", "\"fixed\"")
-        dfdm = set_section_key(dfdm, "solver", "sat_face_cache", "\"on\"")
-        dfdm_config = case_dir / "dfdm_ak135_mrr_hdur80_refined.toml"
+        dfdm = replace_key(dfdm, "mesh_file", "\"%s\"" % dfdm_mesh.relative_to(ROOT).as_posix())
+        dfdm_config = case_dir / "dfdm.toml"
         dfdm_config.write_text(dfdm)
         meta.update({
             "dfdm_config": dfdm_config.relative_to(ROOT).as_posix(),
             "dfdm_output": dfdm_output.relative_to(ROOT).as_posix(),
-            "dfdm_nex": int(cfg["dfdm_nex"]),
-            "dfdm_ney": int(cfg["dfdm_ney"]),
-            "dfdm_nez_shell": int(cfg["dfdm_nez"]),
+            "dfdm_mesh": dfdm_mesh.relative_to(ROOT).as_posix(),
             "dfdm_dt": float(cfg["dfdm_dt"]),
             "dfdm_nt": int(cfg["dfdm_nt"]),
         })

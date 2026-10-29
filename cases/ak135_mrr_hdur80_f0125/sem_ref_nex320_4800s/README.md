@@ -1,6 +1,6 @@
 # SEM-Ref Seismograms (NEX 320, 80-minute records)
 
-These are the SPECFEM3D_GLOBE seismograms for the SEM arm of `target_nex75_sem320_4800s`, the converged reference the paper's SEM members and DFDM are scored against. Running it costs 27.8 node-hours, so the output ships here instead.
+These are the SPECFEM3D_GLOBE seismograms of the SEM-Ref, the converged reference that the paper's SEM members and DFDM are scored against. Running it costs 27.8 node-hours, so the output ships here instead. The DFDM cases `dfdm_4800s` and `dfdm_720s` use it.
 
 | | |
 |---|---|
@@ -12,7 +12,7 @@ These are the SPECFEM3D_GLOBE seismograms for the SEM arm of `target_nex75_sem32
 
 ## Contents
 
-- `DATA/`: the `Par_file`, `CMTSOLUTION` and `STATIONS` the run read. They are byte-identical to what `scripts/stage_cases.py` writes for `target_nex75_sem320_4800s`.
+- `DATA/`: the `Par_file`, `CMTSOLUTION` and `STATIONS` the run read. They are byte-identical to what `scripts/stage_cases.py` writes for the SEM side of the DFDM cases.
 - `OUTPUT_FILES/DF.AZ??.BX?.sem.ascii.xz`: all 54 traces (18 stations, E/N/Z) exactly as SPECFEM wrote them, xz-compressed. Each file has two columns: time in seconds (starting at -120 s, the source shift) and displacement in meters.
 - `SHA256SUMS`: checksums of the uncompressed traces.
 - `output_mesher.txt.xz`, `output_solver.txt.xz`: SPECFEM's own logs from the run.
@@ -20,10 +20,10 @@ These are the SPECFEM3D_GLOBE seismograms for the SEM arm of `target_nex75_sem32
 ## Use
 
 ```bash
-python3 scripts/install_sem_reference.py target_nex75_sem320_4800s
+python3 scripts/install_sem_reference.py dfdm_4800s
 ```
 
-This decompresses the traces into `runs/target_nex75_sem320_4800s/sem_case/OUTPUT_FILES`, checks each one against `SHA256SUMS`, and refuses if the case's staged `DATA` differs from `DATA/` here. `scripts/validate_smoke.sh` runs the same checks without installing anything (`install_sem_reference.py --verify`).
+The run scripts do this automatically. It decompresses the traces into `runs/dfdm_4800s/sem_case/OUTPUT_FILES`, checks each one against `SHA256SUMS`, and refuses if the case's staged `DATA` differs from `DATA/` here. `scripts/validate_smoke.sh` runs the same checks without installing anything (`install_sem_reference.py --verify`).
 
 To check the files by hand instead:
 

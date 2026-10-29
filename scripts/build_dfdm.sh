@@ -15,6 +15,8 @@ if [[ -z "${CXX:-}" ]]; then
   fi
 fi
 
-cmake -S "$repo/external/dfdm_3d_elastic" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release
+# The published DFDM runs propagate in single precision.
+cmake -S "$repo/external/dfdm_3d_elastic" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release \
+  -DDFDM_REAL="${DFDM_REAL:-float}"
 cmake --build "$build_dir" --target dfdm_elastic3d -j "$jobs"
 echo "$build_dir/dfdm_elastic3d"

@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
-"""Score one SPECFEM member against a SPECFEM reference (paper gate protocol).
+"""Score a SPECFEM or DFDM member against a SPECFEM reference (paper gate protocol).
 
-This is the convergence test that qualifies a cheap SEM mesh as the cost
-anchor: a member passes when all 36 N/Z station-components reach >= 0.995
-full-trace correlation against the reference at BOTH the 3600 s and 4750 s
-horizons, with the antipodal PKP window reported alongside.
+A member passes when all 36 N/Z station-components reach >= 0.995 full-trace
+correlation against the reference at BOTH the 3600 s and 4750 s horizons, with
+the antipodal PKP window reported alongside. For SEM members this is the
+convergence test that qualifies a cheap mesh as the cost anchor; for DFDM it is
+the accuracy gate. TEST may be a SPECFEM OUTPUT_FILES directory or a DFDM
+output directory (Uxyz_dfdm3d_geo_* files).
 
 Channel names differ by mesh size (NEX < 128 writes MX*, NEX >= 128 writes
 BX*), so channels are globbed as ?X. The E component is near-nodal for this
 source-receiver geometry and is excluded, matching the published protocol.
 
 Usage:
-  score_sem_members.py TEST_OUTPUT_FILES REF_OUTPUT_FILES [--label NAME]
+  score_sem_members.py TEST_DIR REF_OUTPUT_FILES [--label NAME]
       [--json OUT.json] [--figure OUT.png] [--source-shift 120]
+      [--test-name NAME] [--ref-name NAME]
 """
 
 import argparse
@@ -39,18 +42,31 @@ PKP_WINDOW = (1100.0, 1400.0)   # relative to the source shift, dist >= 140 deg
 PKP_DIST_MIN = 140.0
 
 
+def load_dfdm(path, sta):
+    """DFDM writes Cartesian displacement on a time axis that already includes the source shift."""
+    i = STATIONS.index(sta)
+    lat, lon = math.radians(LATS[i]), math.radians(LONS[i])
+    north = np.array([-math.sin(lat) * math.cos(lon), -math.sin(lat) * math.sin(lon), math.cos(lat)])
+    up = np.array([math.cos(lat) * math.cos(lon), math.cos(lat) * math.sin(lon), math.sin(lat)])
+    d = np.loadtxt(path)
+    return {"t": d[:, 0], "n": d[:, 1:4] @ north, "z": d[:, 1:4] @ up}
+
+
 def load_member(output_dir, sta, source_shift):
     """Load one station's scored traces; ?X glob covers MX and BX channels.
 
     Only N and Z are read: the E component is near-nodal for this
     source-receiver geometry, so it is excluded from the protocol.
     """
+    dfdm = sorted(glob.glob(str(Path(output_dir) / ("Uxyz_dfdm3d_geo_%s_*.txt" % sta))))
+    if dfdm:
+        return load_dfdm(dfdm[0], sta)
     out = {}
     for comp in SCORED:
         pattern = str(Path(output_dir) / ("DF.%s.?X%s.sem.ascii" % (sta, comp)))
         matches = sorted(glob.glob(pattern))
         if not matches:
-            raise FileNotFoundError("no %s trace for %s in %s" % (comp, sta, output_dir))
+            raise FileNotFoundError("no SPECFEM %s or DFDM trace for %s in %s" % (comp, sta, output_dir))
         d = np.loadtxt(matches[0])
         t = d[:, 0] + source_shift
         v = d[:, 1].copy()
@@ -86,8 +102,9 @@ def score(test_dir, ref_dir, source_shift):
                 row["%s_%d" % (comp, int(horizon))] = corr(a[comp], b[comp])
             if horizon == HORIZONS[-1]:
                 row["_t"] = t
-                row["_test_z"] = a["z"]
-                row["_ref_z"] = b["z"]
+                for comp in ("n", "z"):
+                    row["_test_" + comp] = a[comp]
+                    row["_ref_" + comp] = b[comp]
                 if dist >= PKP_DIST_MIN:
                     lo, hi = source_shift + PKP_WINDOW[0], source_shift + PKP_WINDOW[1]
                     sel = (t >= lo) & (t <= hi)
@@ -119,7 +136,15 @@ def verdict(rows):
     }
 
 
-def make_figure(rows, path, label):
+def nice_mag(raw):
+    """Largest 1, 2 or 5 times a power of ten that does not exceed raw (at least 1)."""
+    if raw <= 1.0:
+        return 1.0
+    p = 10.0 ** math.floor(math.log10(raw))
+    return max(m * p for m in (1.0, 2.0, 5.0) if m * p <= raw)
+
+
+def make_figure(rows, path, test_name, ref_name):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -129,31 +154,32 @@ def make_figure(rows, path, label):
         "legend.fontsize": 13, "xtick.labelsize": 13, "ytick.labelsize": 13,
         "lines.linewidth": 1.4,
     })
-    fig, axes = plt.subplots(1, 2, figsize=(16, 11), sharey=True)
-    peak = max(float(np.max(np.abs(r["_ref_z"]))) for r in rows)
-    resid_peak = max(float(np.max(np.abs(r["_test_z"] - r["_ref_z"]))) for r in rows)
-    mag = max(1.0, 0.4 * peak / resid_peak) if resid_peak > 0 else 1.0
-
-    for i, row in enumerate(rows):
-        off = i
-        norm = peak
-        axes[0].plot(row["_t"], off + row["_ref_z"] / norm, color="k", lw=1.1)
-        axes[0].plot(row["_t"], off + row["_test_z"] / norm, color="tab:red", ls="--", lw=1.1)
-        axes[1].plot(row["_t"], off + mag * (row["_test_z"] - row["_ref_z"]) / norm,
-                     color="tab:blue", lw=1.0)
-        for ax in axes:
-            ax.text(row["_t"][0], off + 0.25, "%s  %d deg" % (row["station"], row["distance_deg"]),
-                    fontsize=11, va="bottom")
-
-    axes[0].set_title("%s: record section (Z)" % label)
-    axes[1].set_title("residual (Z), magnified %.0fx" % mag)
-    for ax in axes:
-        ax.set_xlabel("time (s)")
+    fig, axes = plt.subplots(2, 2, figsize=(16, 22), sharex=True, sharey=True)
+    for r, comp in enumerate(("z", "n")):
+        peak = max(float(np.max(np.abs(row["_ref_" + comp]))) for row in rows)
+        resid_peak = max(float(np.max(np.abs(row["_test_" + comp] - row["_ref_" + comp])))
+                         for row in rows)
+        mag = nice_mag(0.4 * peak / resid_peak) if resid_peak > 0 else 1.0
+        for i, row in enumerate(rows):
+            ref = row["_ref_" + comp] / peak
+            test = row["_test_" + comp] / peak
+            axes[r, 0].plot(row["_t"], i + ref, color="k", lw=1.1)
+            axes[r, 0].plot(row["_t"], i + test, color="tab:red", ls="--", lw=1.1)
+            axes[r, 1].plot(row["_t"], i + mag * (test - ref), color="tab:blue", lw=1.0)
+            for ax in axes[r]:
+                ax.text(row["_t"][0], i + 0.25, "%d\N{DEGREE SIGN}" % row["distance_deg"],
+                        fontsize=11, va="bottom")
+        name = {"z": "vertical", "n": "north"}[comp]
+        axes[r, 0].set_title("%s and %s, %s" % (ref_name, test_name, name))
+        axes[r, 1].set_title("%s - %s, %s, magnified %gx" % (test_name, ref_name, name, mag))
+    for ax in axes.flat:
         ax.set_yticks([])
         ax.grid(alpha=0.15)
-    axes[0].plot([], [], color="k", label="reference")
-    axes[0].plot([], [], color="tab:red", ls="--", label="member")
-    axes[0].legend(loc="upper right", frameon=False)
+    for ax in axes[1]:
+        ax.set_xlabel("time (s)")
+    axes[0, 0].plot([], [], color="k", label=ref_name)
+    axes[0, 0].plot([], [], color="tab:red", ls="--", label=test_name)
+    axes[0, 0].legend(loc="upper right", framealpha=1.0)
     fig.tight_layout()
     fig.savefig(str(path), dpi=140)
     plt.close(fig)
@@ -167,10 +193,17 @@ def main():
     ap.add_argument("--json", dest="json_out")
     ap.add_argument("--figure", dest="figure_out")
     ap.add_argument("--source-shift", type=float, default=120.0)
+    ap.add_argument("--test-name", default="member", help="legend name of the scored member")
+    ap.add_argument("--ref-name", default="reference", help="legend name of the reference")
     args = ap.parse_args()
 
     os.environ.setdefault("MPLCONFIGDIR", "/tmp/mplconfig_sem_members")
     rows = score(args.test_dir, args.ref_dir, args.source_shift)
+    common_end = float(rows[0]["_t"][-1])
+    if common_end < HORIZONS[-1] - DT:
+        print("== %s ==\nThe records end at %.0f s, before the gate's %.0f s horizon; no verdict."
+              % (args.label, common_end, HORIZONS[-1]))
+        return 0
     v = verdict(rows)
 
     print("== %s ==" % args.label)
@@ -206,7 +239,7 @@ def main():
         print("wrote %s" % args.json_out)
 
     if args.figure_out:
-        make_figure(rows, args.figure_out, args.label)
+        make_figure(rows, args.figure_out, args.test_name, args.ref_name)
         print("wrote %s" % args.figure_out)
 
     return 0 if v["pass"] else 1

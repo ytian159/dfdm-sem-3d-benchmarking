@@ -1,31 +1,6 @@
 {
   "cases": [
     {
-      "name": "fixture_smoke",
-      "note": "Small synthetic SEM/DFDM waveform fixture used to validate clone-clean plotting.",
-      "source": "Synthetic AK135 Mrr-shaped traces; not a physics benchmark.",
-      "synthetic": true,
-      "equivalent_frequency_hz": 0.0125,
-      "record_minutes": 10.0,
-      "dfdm_nex": 6,
-      "dfdm_ney": 6,
-      "dfdm_nez": 30,
-      "dfdm_dt": 0.04,
-      "dfdm_nt": 20,
-      "sem_nex": 16,
-      "sem_nproc": 1,
-      "sem_dt": 1.0,
-      "slurm": {
-        "time": "00:10:00",
-        "nodes": 1,
-        "sem_nodes": 1,
-        "sem_tasks": 1,
-        "dfdm_nodes": 1,
-        "dfdm_tasks": 1,
-        "cpus_per_task": 1
-      }
-    },
-    {
       "name": "paper_sem_nex64_4800s",
       "note": "Paper SEM cost anchor: cheapest SPECFEM mesh passing 0.995 on all 36 N/Z components vs the NEX320 reference at hdur80. 24 ranks on one shared node; 0.147 node-h as billed (node-h = tasks*cpus/256 x solver wall hours).",
       "source": "AK135 Mrr CMT, stock SPECFEM quasi-Heaviside, half_duration=80s",
@@ -60,21 +35,19 @@
       }
     },
     {
-      "name": "pilot_nex60_sem256_720s",
-      "note": "Pilot resolved-PPW AK135 Mrr CMT case: DFDM NEX60/NEZ30 against SPECFEM NEX256 for 10 record minutes.",
+      "name": "dfdm_4800s",
+      "note": "DFDM production mesh, 80-minute records, against the NEX320 SEM-Ref (shipped in sem_ref_nex320_4800s).",
       "source": "AK135 Mrr CMT, stock SPECFEM quasi-Heaviside, half_duration=80s",
       "equivalent_frequency_hz": 0.0125,
-      "record_minutes": 10.0,
-      "dfdm_nex": 60,
-      "dfdm_ney": 60,
-      "dfdm_nez": 30,
-      "dfdm_dt": 0.04,
-      "dfdm_nt": 18000,
-      "sem_nex": 256,
+      "record_minutes": 80.0,
+      "sem_reference": "sem_ref_nex320_4800s",
+      "sem_nex": 320,
       "sem_nproc": 8,
-      "sem_dt": 0.04,
+      "sem_dt": 0.03,
+      "dfdm_dt": 0.290625,
+      "dfdm_nt": 16517,
       "slurm": {
-        "time": "04:00:00",
+        "time": "01:00:00",
         "nodes": 4,
         "sem_nodes": 3,
         "sem_tasks": 384,
@@ -84,28 +57,47 @@
       }
     },
     {
-      "name": "target_nex75_sem320_4800s",
-      "note": "Target resolved-PPW AK135 Mrr CMT case: DFDM NEX75/NEZ30 against SPECFEM NEX320 for 80 record minutes. The SEM arm is the paper's converged NEX320 reference configuration; its seismograms ship in sem_ref_nex320_4800s.",
+      "name": "dfdm_720s",
+      "note": "Quick check: the same DFDM run for the first 720 s, against the same SEM-Ref.",
       "source": "AK135 Mrr CMT, stock SPECFEM quasi-Heaviside, half_duration=80s",
-      "sem_reference": "sem_ref_nex320_4800s",
       "equivalent_frequency_hz": 0.0125,
       "record_minutes": 80.0,
-      "dfdm_nex": 75,
-      "dfdm_ney": 75,
-      "dfdm_nez": 30,
-      "dfdm_dt": 0.04,
-      "dfdm_nt": 120000,
+      "sem_reference": "sem_ref_nex320_4800s",
       "sem_nex": 320,
       "sem_nproc": 8,
       "sem_dt": 0.03,
+      "dfdm_dt": 0.290625,
+      "dfdm_nt": 2478,
       "slurm": {
-        "time": "48:00:00",
+        "time": "00:20:00",
         "nodes": 4,
         "sem_nodes": 3,
         "sem_tasks": 384,
         "dfdm_nodes": 4,
         "dfdm_tasks": 504,
         "cpus_per_task": 2
+      }
+    },
+    {
+      "name": "fixture_smoke",
+      "note": "Small synthetic SEM/DFDM waveform fixture used to validate clone-clean plotting.",
+      "source": "Synthetic AK135 Mrr-shaped traces; not a physics benchmark.",
+      "synthetic": true,
+      "equivalent_frequency_hz": 0.0125,
+      "record_minutes": 10.0,
+      "dfdm_dt": 0.290625,
+      "dfdm_nt": 20,
+      "sem_nex": 16,
+      "sem_nproc": 1,
+      "sem_dt": 1.0,
+      "slurm": {
+        "time": "00:10:00",
+        "nodes": 1,
+        "sem_nodes": 1,
+        "sem_tasks": 1,
+        "dfdm_nodes": 1,
+        "dfdm_tasks": 1,
+        "cpus_per_task": 1
       }
     }
   ]

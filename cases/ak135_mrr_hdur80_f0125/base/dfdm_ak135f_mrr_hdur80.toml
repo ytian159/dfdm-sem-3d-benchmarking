@@ -1,19 +1,29 @@
+# DFDM3D configuration for the AK135-F (no mud) Mrr benchmark, 80 s half duration, elastic.
+# Production mesh of DFDM3D branch production-2026-10: 66,560 elements, deep layers merged into taller
+# elements, crust at 5 radial points, time step 0.90 x the mesh's measured stability limit.
+# scripts/stage_cases.py fills in nt, output_dir and mesh_file for each case.
 [simulation]
-dt = 0.1
-nt = 48000
-output_dir = "bench/f0125_perf_compare/moment_f0125_hdur80/DFDM_OUTPUT_ak135_mrr_heaviside_hdur80_s6_block3d_np504"
+dt = 0.290625
+nt = 0
+output_dir = ""
 
 [mesh3d]
+full_shell_nez_decoupled = true
 nx = 6
 ny = 6
 nz = 6
-nex = 30
-ney = 30
-nez = 30
+nex = 32
+central_cube_nex = 8
+nex_per_layer = [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 16, 16, 16, 16, 16, 32, 32, 32, 32, 32, 32, 32]
+ney = 32
+nez = 22
 porder = 4
+nz_per_layer = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 10, 10, 6, 6, 10, 10, 6, 6, 6, 5, 5]
+allow_low_radial_order = true
 
 [geometry]
 kind = "earth"
+mesh_file = ""
 earth_radius_m = 6371000
 lat_degree = 90
 lon_degree = 90
@@ -33,7 +43,7 @@ center_lon_degree = 0
 width_xi_degree = 90
 width_eta_degree = 90
 gamma_degree = 0
-radial_boundary_depths_km = [5421, 5287.25, 5153.5, 4870.75, 4588, 4305.25, 4022.5, 3739.75, 3457, 3174.25, 2891.5, 2643.556, 2395.611, 2147.667, 1899.722, 1651.778, 1403.833, 1155.889, 907.944, 660, 576.667, 493.333, 410, 347.5, 285, 222.5, 160, 97.5, 35, 20, 0]
+radial_boundary_depths_km = [5421, 5287.25, 5153.5, 4870.75, 4588, 4305.25, 4022.5, 3739.75, 3457, 3174.25, 2891.5, 2643.556, 1899.7225, 1155.889, 907.944, 660, 410, 222.5, 160, 97.5, 35, 20, 0]
 
 [material]
 model = "1D_ak135f_no_mud"
@@ -71,6 +81,9 @@ depth_m = 0
 top = "free_surface"
 
 [solver]
+fluid_core = "off"
+sat_face_cache = "fused"
+fluid_solid_faces = "one_sided"
 mass_factorization = "schur_sqrt"
 stress_pullback_mode = "fused"
 enable_fixture_exports = false
@@ -78,6 +91,9 @@ omp_threads = 1
 
 [receivers]
 names = ["AZ01", "AZ02", "AZ03", "AZ04", "AZ05", "AZ06", "AZ07", "AZ08", "AZ09", "AZ10", "AZ11", "AZ12", "AZ13", "AZ14", "AZ15", "AZ16", "AZ17", "AZ18"]
+
 latitude_deg = [16, 26, 36, 46, 56, 66, 76, 86, 84, 74, 64, 54, 44, 34, 24, 14, 4, -1]
+
 longitude_deg = [12, 12, 12, 12, 12, 12, 12, 12, -168, -168, -168, -168, -168, -168, -168, -168, -168, -168]
+
 depth_m = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

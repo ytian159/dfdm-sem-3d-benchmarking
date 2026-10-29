@@ -2,10 +2,12 @@
 set -euo pipefail
 
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-case_name="${1:-pilot_nex60_sem256_720s}"
+case_name="${1:?usage: run_case_slurm.sh CASE}"
 
 if [[ "${NO_STAGE:-0}" != "1" ]]; then
-  python3 "$repo/scripts/stage_cases.py" --case "$case_name" --force
+  if [[ "${FORCE_STAGE:-0}" == "1" || ! -s "$repo/runs/$case_name/case_metadata.json" ]]; then
+    python3 "$repo/scripts/stage_cases.py" --case "$case_name" --force
+  fi
 fi
 
 eval "$(python3 "$repo/scripts/case_env.py" "$case_name")"

@@ -25,6 +25,7 @@ def main():
         "SEM_NODES": slurm["sem_nodes"],
         "SEM_TASKS": slurm["sem_tasks"],
         "CPUS_PER_TASK": slurm["cpus_per_task"],
+        "SEM_REFERENCE": meta.get("sem_reference", ""),
         "HAS_DFDM": "1" if meta.get("has_dfdm", True) else "0",
     }
     if meta.get("has_dfdm", True):
