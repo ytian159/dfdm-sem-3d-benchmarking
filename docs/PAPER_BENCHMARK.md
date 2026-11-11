@@ -1,8 +1,10 @@
-# Benchmark Details
+# The published-paper benchmark (AK135, Mrr, 80-s half duration)
+
+This page describes the case of the paper on the 3-D solver: AK135 without attenuation, scored against SPECFEM at NEX320 (SEM-Ref), with the paper's SPECFEM cost anchor. The newer benchmarks of the main [README](../README.md) do not depend on it.
 
 ## Repository Layout
 
-- `external/dfdm_3d_elastic`: DFDM3D solver submodule, branch `production-2026-10` (the path name is kept for compatibility).
+- `external/dfdm_3d_elastic`: DFDM3D solver submodule, branch `main` (the path name is kept for compatibility).
 - `external/specfem3d_globe`: public SPECFEM3D_GLOBE submodule.
 - `cases/ak135_mrr_hdur80_f0125`: base DFDM configuration, SPECFEM `DATA` files, and case matrix.
 - `cases/ak135_mrr_hdur80_f0125/dfdm_mesh`: the DFDM mesh, compressed, with its checksum and the planner command that generated it.
@@ -26,7 +28,7 @@ The published hdur-80 SEM cost anchor is `NEX=64`, `DT=0.15`, 4800-second record
 
 A clean run of the staged case on Perlmutter (2026-08-12, `shared_interactive`, 24 ranks at `-c 2`) reproduced it: 2828.8 s solver wall over 33000 steps at 85.5 ms/step, 0.1473 node-hours, against the original run's 2832.7 s and 0.1475. Its seismograms correlate with the original run's at 1.00000 on all 36 N/Z components, and the case passes the gate against the `NEX=96` rung 36/36 with a worst full-trace correlation of 0.99812 and PKP-window correlations of 0.99998. Against the shipped `NEX=320` SEM-Ref it passes 36/36 with a worst full-trace correlation of 0.99843 and PKP-window minima of 0.99993 (Z) and 0.99990 (N).
 
-The DFDM cases run the production setup of DFDM3D (branch `production-2026-10`), which is newer than the paper's elastic record: a 66,560-element mesh with the deep layers merged into taller elements and the crust at 5 radial points, at `dt` 0.290625 s, where the paper used the 832-brick mesh at 0.1875 s (1.17 node-hours on tag `cpu-freeze-2026-07-10`). A clean run of `dfdm_4800s` (2026-10-28, 504 ranks on 4 exclusive nodes) took 602.5 s, 0.669 node-hours, and passed the gate against the shipped SEM-Ref 36/36 with a worst full-trace correlation of 0.99748 and PKP-window minima of 0.99926 (Z) and 0.99936 (N); against the paper's elastic record it correlates at 0.9987 or better on all 36 components. The DFDM built by `scripts/build_dfdm.sh` reproduces the production solver's output bit for bit (all 822 receiver files of a 40-step production run).
+The DFDM cases run the production setup of DFDM3D (built since November 2026 from `main`, with byte-identical records), which is newer than the paper's elastic record: a 66,560-element mesh with the deep layers merged into taller elements and the crust at 5 radial points, at `dt` 0.290625 s, where the paper used the 832-brick mesh at 0.1875 s (1.17 node-hours on tag `cpu-freeze-2026-07-10`). A clean run of `dfdm_4800s` (2026-10-28, 504 ranks on 4 exclusive nodes) took 602.5 s, 0.669 node-hours, and passed the gate against the shipped SEM-Ref 36/36 with a worst full-trace correlation of 0.99748 and PKP-window minima of 0.99926 (Z) and 0.99936 (N); against the paper's elastic record it correlates at 0.9987 or better on all 36 components. The DFDM built by `scripts/build_dfdm.sh` reproduces the production solver's output bit for bit (all 822 receiver files of a 40-step production run).
 
 Two conventions have to match for the SEM number to come out right.
 
@@ -54,7 +56,7 @@ DFDM uses `dt = 0.290625` s, 0.90 times the measured stability limit of its mesh
 
 The public SPECFEM submodule tracks `SPECFEM/specfem3d_globe` branch `master`.
 
-The DFDM submodule tracks `ytian159/DFDM3D` branch `production-2026-10`: the production solver (per-element point counts, the 5-point crust, the cost-weighted MPI partition), the mesh planner, and the self-test battery. `scripts/prepare_dfdm.sh` checks that the source supports per-layer lateral element counts and the 5-point crust before the build. `scripts/build_dfdm.sh` builds single precision (`DFDM_REAL=float`), as in the published runs.
+The DFDM submodule tracks `ytian159/DFDM3D` branch `main`: the production solver (per-element point counts, the 5-point crust, the cost-weighted MPI partition), the mesh planner, and the self-test battery. `scripts/prepare_dfdm.sh` checks that the source supports per-layer lateral element counts and the 5-point crust before the build. `scripts/build_dfdm.sh` builds single precision (`DFDM_REAL=float`), as in the published runs.
 
 ## Case Matrix
 

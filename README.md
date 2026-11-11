@@ -1,155 +1,179 @@
-# DFDM/SEM 3D Benchmarking
+# DFDM / SPECFEM global benchmarks
 
-Global wave propagation benchmark comparing DFDM 3D with SPECFEM3D_GLOBE: AK135 model, vertical dipole (Mrr) source at 50 km depth with an 80 s half duration, 18 stations from 10° to 175°. The scripts reproduce the published SEM cost anchor and score DFDM against a converged SEM reference.
+This repository compares two codes that simulate seismic waves through the whole Earth: DFDM3D (the distributional
+finite-difference method) and SPECFEM3D_GLOBE (the spectral-element method). Each benchmark runs DFDM for one
+earthquake, compares its records with a reference solution, and prints DFDM's error and cost next to SPECFEM's.
 
-The conventions behind the numbers (node-hour accounting, pass criteria, the perfect-sphere build) are in [docs/BENCHMARK_DETAILS.md](docs/BENCHMARK_DETAILS.md).
+| case | Earth model | reference | DFDM run |
+|---|---|---|---|
+| `prem_1d` | PREM (1-D, anisotropic, attenuating) | exact answer (DSM normal-mode summation) | 3 min on 4 nodes |
+| `ak135f_1d` | AK135-F (1-D, attenuating) | exact answer (DSM) | 3 min on 4 nodes |
+| `semucb_crust1_3d` | SEMUCB-WM1 mantle with CRUST1.0 (3-D) | SPECFEM with a fine mesh (NEX192) | 6 min on 4 nodes |
+
+All three use an earthquake at 50 km depth under 6N 12E with an 80-s half duration and 80 minutes of records (18
+stations at 10 to 175 degrees for the 1-D cases, 90 stations on seven azimuths for the 3-D case). The SPECFEM records
+and the reference records ship with the repository, so only DFDM needs to run.
+
+Results on Perlmutter (error = median misfit over the stations, %; lower is better):
+
+| case | DFDM error | DFDM cost | SPECFEM NEX64 error | SPECFEM NEX64 cost |
+|---|---|---|---|---|
+| `prem_1d` | Z 2.04, R 3.02 | 0.159 node-hours | Z 3.20, R 2.91 | 0.190 node-hours |
+| `ak135f_1d` | Z 3.41, R 2.72 | 0.166 node-hours | Z 3.37, R 2.76 | 0.232 node-hours |
+| `semucb_crust1_3d` | Z 2.72, R 3.43, T 3.03 | 0.361 node-hours | Z 3.32, R 3.57, T 4.31 | 0.530 node-hours |
+
+Z is the vertical component, R the horizontal component along the path from the earthquake, T the horizontal
+component across it. More earthquakes, depths and models are compared in the DFDM3D repository's
+[COMPARISON_WITH_SPECFEM.md](https://github.com/ytian159/DFDM3D/blob/main/docs/COMPARISON_WITH_SPECFEM.md).
 
 ## Requirements
 
-- Python 3 with `numpy` and `matplotlib` (`pip install --user -r requirements.txt`).
-- DFDM: C++17 compiler with MPI and CMake 3.14 or newer (`CC` on Perlmutter).
-- SPECFEM, only for the SEM cases: Fortran compiler with MPI (`ftn` on Perlmutter).
-- Slurm. Replace `<account>` in the commands below with your allocation.
+- A Slurm cluster. The commands below are for Perlmutter CPU nodes; replace `<account>` with your allocation.
+- DFDM: a C++17 compiler with MPI, CMake 3.14 or newer, and BLAS/LAPACK (`CC` on Perlmutter).
+- Python 3 with numpy, scipy and matplotlib (`pip install --user -r requirements.txt`).
+- SPECFEM3D_GLOBE only if you want to rerun SPECFEM yourself: a Fortran compiler with MPI (`ftn` on Perlmutter).
 
 ## Installation
 
 ```bash
 git clone --recurse-submodules git@github.com:ytian159/dfdm-sem-3d-benchmarking.git
 cd dfdm-sem-3d-benchmarking
-bash scripts/build_dfdm.sh                 # DFDM3D, single precision as in the published runs
-bash scripts/build_specfem_perlmutter.sh   # only to run SPECFEM
+bash scripts/build_dfdm.sh            # builds external/dfdm_3d_elastic into build/dfdm/
 ```
 
-The SPECFEM build sets `ASSUME_PERFECT_SPHERE = .true.`; both codes place the stations on a perfect sphere, and the run script rejects a build without it. Existing builds can be used instead through `SPECFEM_ROOT` and `DFDM_EXE` (see Options).
-
-## Benchmark cases
-
-Cases are defined in `cases/ak135_mrr_hdur80_f0125/case_matrix.json`.
-
-| case | description | solver | run time |
-|---|---|---|---|
-| `dfdm_4800s` | DFDM, 80-minute records, scored against the SEM reference | DFDM | 10 min on 4 nodes (0.67 node-hours) |
-| `dfdm_720s` | the same DFDM run for the first 720 s; a quick check | DFDM | 2 min on 4 nodes (0.11 node-hours) |
-| `paper_sem_nex64_4800s` | published SEM cost anchor: NEX 64, 80-minute records | SPECFEM | 47 min on 24 cores (0.147 node-hours) |
-| `paper_sem_nex96_4800s` | finer SEM mesh for the anchor convergence check | SPECFEM | 2.7 h on 24 cores (0.5 node-hours) |
-
-The SEM reference (SEM-Ref) is SPECFEM at NEX 320 with 80-minute records. It takes 27.8 node-hours to compute, so its seismograms ship with the repository and the DFDM cases use them automatically. It is over-resolved on purpose; DFDM-to-SEM cost ratios are measured against the anchor, not against it.
-
-## Running the benchmarks
-
-Each run stages the case (input files under `runs/<case>/`), runs the solver inside a Slurm allocation, and compares the output. The run scripts stage a case automatically the first time. On Perlmutter every benchmark fits the interactive queues, which start within minutes; the same scripts also run under `sbatch` with the same node counts.
-
-### DFDM against the SEM reference
+The 3-D case also needs two model tables, built from public data (SEMUCB-WM1 from the IRIS Earth Model
+Collaboration, CRUST1.0 from SPECFEM's data folder). This takes about a minute; on Perlmutter run it on a compute
+node:
 
 ```bash
-salloc -A <account> -C cpu -q interactive -N 4 -t 01:00:00 \
-  bash -lc "cd $PWD && scripts/run_case_slurm.sh dfdm_4800s"
+salloc -A <account> -C cpu -q shared_interactive -N 1 -c 16 -t 00:30:00
+bash scripts/get_3d_models.sh         # writes models/semucb_wm1.tomo3d and models/crust1_specfem.txt
 ```
 
-The run installs the SEM-Ref seismograms, runs DFDM on 504 ranks, and scores it. The output includes:
+The script checks both tables against the ones used for the results above. If the download from IRIS fails, it says
+where to get the two files by hand.
+
+## Running a benchmark
+
+Get 4 CPU nodes, then run one case:
+
+```bash
+salloc -A <account> -C cpu -q interactive -N 4 -t 00:30:00
+scripts/run_benchmark.sh prem_1d
+```
+
+The same script runs under `sbatch` (`sbatch -A <account> -C cpu -q debug -N 4 -t 00:30:00 scripts/run_benchmark.sh
+prem_1d`, submitted from the repository folder). It runs DFDM, measures its cost and prints the scores:
 
 ```text
-layout          : 504 ranks x 2 cpus on 4 nodes
-solver wall     : 602.5 s
-NODE-HOURS      : 0.669
-...
-worst full-trace correlation : 0.99748 (bar 0.995)
-PKP window  Z min / N min    : 0.99926 / 0.99936
-VERDICT: PASS (36/36 components)
+wall time   : 143.3 s on 4 nodes
+node-hours  : 0.159
+
+PREM (1-D): misfit against DSM, %, median (worst) over 18 stations
+solution            Z (vertical)          R (along the path)    node-hours
+--------------------------------------------------------------------------
+DFDM                2.04 (9.51)           3.02 (10.83)          0.159
+SPECFEM NEX64       3.20 (9.70)           2.91 (10.88)          0.190
 ```
 
-The quick check:
+The other cases:
 
 ```bash
-salloc -A <account> -C cpu -q interactive -N 4 -t 00:30:00 \
-  bash -lc "cd $PWD && scripts/run_case_slurm.sh dfdm_720s"
+scripts/run_benchmark.sh ak135f_1d
+scripts/run_benchmark.sh semucb_crust1_3d     # needs scripts/get_3d_models.sh first
 ```
-
-Its records are too short for the pass/fail score; it produces the figures and the per-station table only.
-
-### SEM cost anchor
-
-```bash
-python3 scripts/stage_cases.py --case paper_sem_nex64_4800s
-
-salloc -A <account> -C cpu -q shared_interactive -N 1 -n 24 -c 2 -t 02:00:00 \
-  bash -lc "cd $PWD && NO_STAGE=1 scripts/run_sem_slurm.sh paper_sem_nex64_4800s"
-```
-
-The run ends with the cost report, also written to `runs/paper_sem_nex64_4800s/sem_perf.json`:
 
 ```text
-layout          : 24 ranks x 2 cpus = 0.1875 node
-solver wall     : 2828.8 s
-NODE-HOURS      : 0.1473
+SEMUCB-WM1 + CRUST1.0 (3-D): misfit against SPECFEM NEX192, %, median (worst) over 90 stations
+solution            Z (vertical)          R (along the path)    T (across the path)   node-hours
+------------------------------------------------------------------------------------------------
+DFDM                2.72 (7.70)           3.43 (6.66)           3.03 (40.82)          0.361
+SPECFEM NEX64       3.32 (12.55)          3.57 (12.78)          4.31 (18.04)          0.530
+SPECFEM NEX96       1.34 (2.52)           1.66 (4.07)           2.32 (19.52)          0.916
 ```
 
-The anchor must run on a shared node: the published wall time is a shared-node wall time, and an exclusive node runs the same job about 2.3 times faster.
-
-### Anchor accuracy check
-
-The anchor is scored against the SEM-Ref, which is installed in the `dfdm_4800s` case. No allocation is needed:
+To score finished runs again, or to look at the shipped SPECFEM records without running DFDM:
 
 ```bash
-python3 scripts/install_sem_reference.py dfdm_4800s
-scripts/compare_sem_members.sh paper_sem_nex64_4800s dfdm_4800s
+python3 scripts/score_benchmark.py semucb_crust1_3d
 ```
 
-Expected: `VERDICT: PASS (36/36 components)`, worst correlation 0.99843. The score and a record-section figure are written to `runs/paper_sem_nex64_4800s/`.
+## How the score is computed
 
-To check against a freshly computed member instead, run `paper_sem_nex96_4800s` like the anchor and score with `scripts/compare_sem_members.sh paper_sem_nex64_4800s paper_sem_nex96_4800s`.
+Every record is turned into the three components Z, R and T, put on one time axis (200 to 4750 s after the
+earthquake, every 0.5 s) and low-passed at 25 mHz (periods longer than 40 s). For each station and component:
 
-### Running the solvers separately
+    misfit (%) = 100 x ||record - reference|| / ||reference||
 
-`scripts/run_dfdm_slurm.sh <case>` and `scripts/run_sem_slurm.sh <case>` run one solver each, with the same allocations as above. `bash scripts/compare_case.sh <case>` compares finished outputs.
+The tables give the median over the stations and, in brackets, the worst station. In the 3-D case, components whose
+reference amplitude is below 5 % of the largest station's are left out (a relative error of a near-zero record says
+little). The SPECFEM record times are shifted by 1.5 half durations (120 s) onto DFDM's clock, where the source
+starts at time zero.
+
+Cost is nodes times wall time. DFDM runs 504 processes on 4 whole nodes. The SPECFEM costs in the tables were measured
+on one whole Perlmutter CPU node with 96 processes, at the time step SPECFEM chooses itself, for an 80-minute record.
+
+**About the 3-D reference.** No exact answer exists for a 3-D Earth, so the 3-D case uses SPECFEM with a fine mesh
+(NEX192) as the reference. It is not the truth: SPECFEM's own NEX64 and NEX96 runs differ from each other by 2 to 3 %
+on other earthquakes, so differences smaller than that are within the uncertainty of the reference.
 
 ## Output files
 
-All outputs for a case are under `runs/<case>/`.
+Everything for a case goes to `runs/<case>/`:
 
 | file | content |
 |---|---|
-| `dfdm_score.json`, `dfdm_score.png` | DFDM against the SEM-Ref: pass/fail per station and component, record sections, magnified residuals |
-| `resolved_ppw_sem_dfdm_metrics.md`, `resolved_ppw_sem_dfdm_*.png` | per-station correlation, RMS difference and peak ratio, with overlay and residual figures (vertical component) |
-| `dfdm_cost.txt`, `sem_perf.json` | DFDM and SPECFEM cost reports |
-| `DFDM_OUTPUT/Uxyz_dfdm3d_geo_AZ??_*.txt` | DFDM seismograms (time, x, y, z displacement) |
-| `sem_case/OUTPUT_FILES/DF.AZ??.?X?.sem.ascii` | SPECFEM seismograms (time, displacement); channel `MX` for NEX below 128, `BX` otherwise |
-| `sem_seismograms.json` | source and checksums of installed SEM seismograms |
-| `sem_member_score_vs_<ref>.json`, `.png` | score of a SEM case against a reference case |
+| `score.json` | misfit per solution, component and station, and the costs |
+| `fig_records_Z.png`, `_R.png`, `_T.png` | record sections along the 12E meridian: each trace scaled to its own peak, the reference in black; right panel: differences from the reference magnified 10 times |
+| `dfdm_cost.json` | DFDM wall time, nodes and node-hours |
+| `dfdm_output/Uxyz_dfdm3d_geo_<station>_*.txt` | DFDM records: time (s) and displacement (m) along x, y, z of the turned mesh (the scorer turns them back with `cases/<case>/dfdm/turn.json`) |
+| `run.toml`, `dfdm.log` | the DFDM run file as run, and the solver's log |
+
+## Running SPECFEM yourself (1-D cases)
+
+To measure SPECFEM's cost on your own machine, build SPECFEM and run the case's NEX64 input on one whole node:
+
+```bash
+bash scripts/build_specfem_perlmutter.sh     # stock SPECFEM3D_GLOBE with ASSUME_PERFECT_SPHERE set
+salloc -A <account> -C cpu -q interactive -N 1 -t 01:00:00
+scripts/run_specfem.sh prem_1d
+```
+
+It writes `runs/prem_1d/specfem_cost.json` and scores the run as one more row, "SPECFEM (your run)". The input is in
+`cases/<case>/specfem/DATA`. `ASSUME_PERFECT_SPHERE` makes SPECFEM place stations at the same geocentric positions
+as DFDM; without it every station moves by up to 21 km.
+
+The 3-D SPECFEM records were made with a SPECFEM build that reads the same SEMUCB-WM1 table as DFDM; stock SPECFEM
+cannot read it, so the 3-D case ships SPECFEM's records only.
 
 ## Options
 
-Environment variables, set in front of a command or with `--export=ALL,NAME=value` on `sbatch`.
-
 | variable | effect |
 |---|---|
-| `SEM_SEISMOGRAMS=run` | compute the SEM-Ref with SPECFEM instead of using the shipped seismograms (27.8 node-hours, about 9.5 hours on 3 nodes; longer than the interactive limit, so use `sbatch -q regular -t 12:00:00`) |
-| `SEM_SEISMOGRAMS=/path/to/OUTPUT_FILES` | use SPECFEM seismograms from an earlier run; the run's `DATA` directory must sit next to `OUTPUT_FILES` and match the case |
-| `SPECFEM_ROOT=/path/to/specfem3d_globe` | use an existing SPECFEM build (`bin/xmeshfem3D`, `bin/xspecfem3D`, perfect-sphere constant set) |
-| `DFDM_EXE=/path/to/dfdm_elastic3d` | use an existing DFDM build |
-| `DFDM_REAL=double` | build DFDM in double precision |
-| `NO_STAGE=1` | do not touch the staged input files |
-| `FORCE_STAGE=1` | regenerate the input files after editing the case definition; refuses if the case directory holds results |
-| `COMPARE_DT=0.1` | resampling interval in seconds for the comparison |
-| `SOURCE_SHIFT=120` | source shift used in scoring, 1.5 times the half duration |
-| `SKIP_SPHERE_CHECK=1` | allow a stock SPECFEM build; invalidates the DFDM comparison |
+| `DFDM_EXE=/path/to/dfdm_elastic3d` | use another DFDM build |
+| `MODEL_DIR=/path` | where `get_3d_models.sh` writes, and `run_benchmark.sh` reads, the 3-D model tables (default `models/`) |
+| `PYTHON=/path/to/python3` | the Python used by the scripts |
+| `NO_SCORE=1` | run DFDM without scoring |
+| `SPECFEM_ROOT=/path/to/specfem3d_globe` | use another SPECFEM build |
+| `DFDM_REAL=double` | with `build_dfdm.sh`: build DFDM in double precision |
 
-`scripts/install_sem_reference.py <case>` installs the shipped seismograms directly; `--from DIR` installs from disk, `--force` replaces seismograms already in the case, `--verify` checks the shipped files.
+## What is in a case
 
-## Customizing a case
+`cases/<case>/` holds everything a run needs:
 
-**Time step and record length.** Edit the case in `case_matrix.json` or copy it under a new name:
+- `case.json`: the earthquake, the stations, the scoring settings, the reference and the SPECFEM costs.
+- `dfdm/run.toml`: the DFDM run file, written by the DFDM3D mesh planner (`python3 -m automesh shells`, plus
+  `near-source` and `steps-from-probe` for the 3-D case). `run_benchmark.sh` fills in the paths marked `@...@`.
+- `dfdm/turn.json`: the rotation that puts the earthquake in the middle of one chunk of the cubed-sphere mesh.
+- `reference/*.npz`: the reference and SPECFEM records, already in Z, R, T on DFDM's clock, sampled every second
+  after an anti-alias filter at 0.2 Hz (arrays `t`, `names`, `z`, `r`, `x`).
+- `specfem/DATA` (1-D cases): the SPECFEM NEX64 input.
 
-- `dfdm_dt`, `dfdm_nt`: DFDM time step and number of steps; the DFDM record is `dfdm_dt * dfdm_nt` seconds. 0.290625 s is 0.90 times the measured stability limit of the shipped mesh; do not go higher.
-- `sem_nex`, `sem_nproc`, `sem_dt`, `record_minutes`: SPECFEM mesh size, processes per chunk edge, time step and record length. `sem_nex` must be divisible by `8 * sem_nproc`, and `slurm.sem_tasks` must equal `6 * sem_nproc^2`. Changing these on a DFDM case means the shipped SEM-Ref no longer applies; run with `SEM_SEISMOGRAMS=run`.
-- `slurm`: nodes and ranks per solver, and `cpus_per_task` (2 on Perlmutter, so that ranks do not share a physical core).
+To run another earthquake or model, write a new run file with the DFDM3D planner (see the DFDM3D README, "Running a
+simulation"); the reference must then come from your own SPECFEM or DSM run.
 
-Then restage with `python3 scripts/stage_cases.py --case <name> --force` (add `--discard-results` to overwrite existing results).
+## The published-paper benchmark
 
-**DFDM mesh.** The mesh is `cases/ak135_mrr_hdur80_f0125/dfdm_mesh/mesh_bricks.txt.xz`, and its element and point counts are in `cases/ak135_mrr_hdur80_f0125/base/dfdm_ak135f_mrr_hdur80.toml`. A new mesh comes from the DFDM3D mesh planner; [dfdm_mesh/README.md](cases/ak135_mrr_hdur80_f0125/dfdm_mesh/README.md) has the command.
-
-**Source and stations.** SPECFEM reads them from `base/sem_DATA/CMTSOLUTION` and `STATIONS`, DFDM from the `[source]` and `[receivers]` sections of the base DFDM file (moment tensor in Cartesian components); both must agree. The station lists at the top of `scripts/plot_sem_dfdm.py` and `scripts/score_sem_members.py` must be updated as well. The DFDM mesh is built for a 50 km source, so a source at another depth needs a new mesh; a new half duration changes `SOURCE_SHIFT`.
-
-**Earth model.** `MODEL` in `base/sem_DATA/Par_file` and `material.model` in the base DFDM file; both must name the same model. The DFDM mesh follows AK135's layers, so another model needs a new mesh.
-
-**Other machines.** Build both codes, point the scripts at them with `SPECFEM_ROOT` and `DFDM_EXE`, and adapt the `salloc` lines to your queues. The SEM cost report assumes 256 CPU slots per node (`SLOTS_PER_NODE` in `scripts/sem_cost.py`).
+The case of the paper on the 3-D solver (AK135 without attenuation, against SPECFEM NEX320, with the paper's SPECFEM
+cost anchor) is kept unchanged in `cases/ak135_mrr_hdur80_f0125`; [docs/PAPER_BENCHMARK.md](docs/PAPER_BENCHMARK.md)
+explains how to run it (`scripts/run_case_slurm.sh dfdm_4800s` and related scripts).

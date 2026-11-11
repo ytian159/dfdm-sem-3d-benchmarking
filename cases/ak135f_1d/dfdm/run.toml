@@ -1,0 +1,115 @@
+# DFDM run file: AK135-F (1-D), an Mrr earthquake (vertical dipole) at 50 km depth under 6N 12E, half duration 80 s,
+# 4800 s of records at 18 stations 10-175 degrees from the earthquake along the 12E meridian.
+# Written by the DFDM3D mesh planner (python3 -m automesh shells). The mesh is turned so that the earthquake sits
+# in the middle of one cubed-sphere chunk; the [source] and [receivers] positions are in the turned frame, and
+# dfdm/turn.json turns the records back to geographic axes. scripts/run_benchmark.sh fills in @OUTPUT_DIR@.
+
+[simulation]
+dt = 0.440625
+nt = 10894
+output_dir = "@OUTPUT_DIR@"
+
+[mesh3d]
+full_shell_nez_decoupled = true
+nx = 6
+ny = 6
+nz = 6
+nex = 24
+central_cube_nex = 6
+nex_per_layer = [6, 6, 6, 6, 6, 6, 6, 6, 6, 12, 12, 12, 12, 12, 24, 24, 24, 24, 24, 24, 24]
+ney = 24
+nez = 21
+porder = 4
+
+nz_per_layer = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 10, 10, 6, 6, 7, 7, 5, 5, 5, 4, 4]
+allow_low_radial_order = true
+central_cube_n = 6
+nx_per_layer = [6, 6, 6, 6, 6, 6, 6, 9, 9, 7, 7, 7, 9, 9, 7, 7, 7, 7, 7, 7, 7]
+ny_per_layer = [6, 6, 6, 6, 6, 6, 6, 9, 9, 7, 7, 7, 9, 9, 7, 7, 7, 7, 7, 7, 7]
+[geometry]
+kind = "earth"
+earth_radius_m = 6371000
+lat_degree = 90
+lon_degree = 90
+depth_top_m = 0
+depth_bottom_m = 6371000
+
+[earth]
+mode = "full"
+chunk_count = 6
+outer_radius_m = 6371000
+inner_radius_m = 0
+central_cube_radius_m = 950000.000000
+inner_core_radius_m = 1217500
+outer_core_radius_m = 3479500
+center_lat_degree = 0
+center_lon_degree = 0
+width_xi_degree = 90
+width_eta_degree = 90
+gamma_degree = 0
+radial_boundary_depths_km = [5421, 5287.25, 5153.5, 4830.357143, 4507.214286, 4184.071429, 3860.928571, 3537.785714, 3214.642857, 2891.5, 2740, 1960, 1180, 920, 660, 410, 210, 151.666667, 93.333333, 35, 20, 0]
+
+cube_map = "equal_angle"
+[material]
+model = "1D_ak135f_no_mud"
+vp = 5000
+vs = 2750
+rho = 2000
+
+[source]
+type = "moment_tensor"
+moment_source_mode = "stress_glut"
+frequency = 0.0125
+amplitude = 1.0
+time_function = "specfem_cmt_heaviside"
+time_shift = 120
+half_duration = 80
+latitude_deg = 1.3121557675543014
+longitude_deg = 1.3124999999999971
+depth_m = 50000.0
+mxx = 9.9895123160497357e+19
+myy = 5.2438419751315840e+16
+mzz = 5.2438419751316032e+16
+mxy = 2.2887425367217551e+18
+mxz = 2.2887425367217551e+18
+myz = 5.2438419751316160e+16
+discretization = "matlab_hat"
+smoothing_sigma_tangent_elements = 0
+smoothing_sigma_radial_elements = 0
+
+metric_interpolation = "collocated"
+static_split_tau_s = 600
+[receiver]
+latitude_deg = 10.153193228297939
+longitude_deg = -3.3887177865634364
+depth_m = 0.0
+
+[boundary]
+top = "free_surface"
+
+[solver]
+fluid_core = "off"
+sat_face_cache = "fused"
+fluid_solid_faces = "one_sided"
+mass_factorization = "schur_sqrt"
+stress_pullback_mode = "fused"
+enable_fixture_exports = false
+omp_threads = 1
+
+[receivers]
+names = ["AZ01", "AZ02", "AZ03", "AZ04", "AZ05", "AZ06", "AZ07", "AZ08", "AZ09", "AZ10", "AZ11", "AZ12", "AZ13", "AZ14", "AZ15", "AZ16", "AZ17", "AZ18"]
+
+latitude_deg = [10.153193228, 18.923515442, 27.547049681, 35.915811916, 43.859434114, 51.090038419, 57.111958001, 61.141885803, 62.287316668, 60.211444464, 55.494222806, 49.045865916, 41.563718497, 33.470798211, 25.012366008, 16.335946556, 7.537645144, 3.115323860]
+
+longitude_deg = [-3.388717787, -8.357893795, -13.876297597, -20.325529157, -28.264490517, -38.523109987, -52.202319222, -70.126387736, -91.186673952, -111.619495379, -128.273276333, -140.819000228, -150.284871302, -157.709743715, -163.834610011, -169.156224291, -174.019641511, -176.363397777]
+
+depth_m = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+[attenuation]
+enabled = true
+n_sls = 3
+f_min_hz = 0.00127939
+f_max_hz = 0.0719458
+f_ref_hz = 1.0
+bulk = false
+fit_normalization = "tan_delta"

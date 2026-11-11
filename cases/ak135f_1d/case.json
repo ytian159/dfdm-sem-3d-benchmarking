@@ -1,0 +1,174 @@
+{
+ "title": "AK135-F (1-D)",
+ "earth_model": "AK135-F (1-D)",
+ "earthquake": {
+  "latitude_deg": 6.0,
+  "longitude_deg": 12.0,
+  "depth_km": 50.0,
+  "mechanism": "Mrr (vertical dipole)",
+  "moment_Nm": 1e+20,
+  "half_duration_s": 80.0
+ },
+ "record_length_s": 4800.0,
+ "scoring": {
+  "window_s": [
+   200.0,
+   4750.0
+  ],
+  "lowpass_hz": 0.025,
+  "components": [
+   "z",
+   "r"
+  ],
+  "min_relative_amplitude": 0.0
+ },
+ "reference": {
+  "name": "DSM",
+  "file": "reference/dsm.npz",
+  "about": "the exact answer for a layered Earth (normal-mode summation, DSM)"
+ },
+ "others": [
+  {
+   "name": "SPECFEM NEX64",
+   "file": "reference/specfem_nex64.npz",
+   "node_hours": 0.232,
+   "about": "SPECFEM3D_GLOBE, 64 elements along each chunk edge, its own time step, 96 processes on one Perlmutter CPU node"
+  }
+ ],
+ "dfdm": {
+  "run_file": "dfdm/run.toml",
+  "turn_file": "dfdm/turn.json",
+  "nodes": 4,
+  "ranks": 504
+ },
+ "specfem_input": "specfem/DATA",
+ "needs_3d_models": false,
+ "stations": [
+  {
+   "name": "AZ01",
+   "lat": 16.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 10
+  },
+  {
+   "name": "AZ02",
+   "lat": 26.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 20
+  },
+  {
+   "name": "AZ03",
+   "lat": 36.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 30
+  },
+  {
+   "name": "AZ04",
+   "lat": 46.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 40
+  },
+  {
+   "name": "AZ05",
+   "lat": 56.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 50
+  },
+  {
+   "name": "AZ06",
+   "lat": 66.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 60
+  },
+  {
+   "name": "AZ07",
+   "lat": 76.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 70
+  },
+  {
+   "name": "AZ08",
+   "lat": 86.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 80
+  },
+  {
+   "name": "AZ09",
+   "lat": 84.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 90
+  },
+  {
+   "name": "AZ10",
+   "lat": 74.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 100
+  },
+  {
+   "name": "AZ11",
+   "lat": 64.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 110
+  },
+  {
+   "name": "AZ12",
+   "lat": 54.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 120
+  },
+  {
+   "name": "AZ13",
+   "lat": 44.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 130
+  },
+  {
+   "name": "AZ14",
+   "lat": 34.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 140
+  },
+  {
+   "name": "AZ15",
+   "lat": 24.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 150
+  },
+  {
+   "name": "AZ16",
+   "lat": 14.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 160
+  },
+  {
+   "name": "AZ17",
+   "lat": 4.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 170
+  },
+  {
+   "name": "AZ18",
+   "lat": -1.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 175
+  }
+ ]
+}

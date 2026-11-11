@@ -15,5 +15,5 @@ if grep -q "allow_low_radial_order" "$dfdm_dir/src/config_toml3d.cpp" \
 fi
 
 echo "DFDM submodule does not contain the production source this benchmark needs." >&2
-echo "Update external/dfdm_3d_elastic to DFDM3D branch production-2026-10." >&2
+echo "Update external/dfdm_3d_elastic to DFDM3D main (git submodule update --init)." >&2
 exit 2

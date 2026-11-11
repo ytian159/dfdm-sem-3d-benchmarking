@@ -1,0 +1,688 @@
+{
+ "title": "SEMUCB-WM1 + CRUST1.0 (3-D)",
+ "earth_model": "SEMUCB-WM1 mantle (IRIS EMC grid) with CRUST1.0 crust, anisotropic PREM background and PREM Q",
+ "earthquake": {
+  "latitude_deg": 6.0,
+  "longitude_deg": 12.0,
+  "depth_km": 50.0,
+  "mechanism": "Mrp (shear)",
+  "moment_Nm": 1e+20,
+  "half_duration_s": 80.0
+ },
+ "record_length_s": 4800.0,
+ "scoring": {
+  "window_s": [
+   200.0,
+   4750.0
+  ],
+  "lowpass_hz": 0.025,
+  "components": [
+   "z",
+   "r",
+   "x"
+  ],
+  "min_relative_amplitude": 0.05
+ },
+ "reference": {
+  "name": "SPECFEM NEX192",
+  "file": "reference/specfem_nex192.npz",
+  "about": "SPECFEM3D_GLOBE with 192 elements along each chunk edge (a fine mesh, used as the reference)"
+ },
+ "others": [
+  {
+   "name": "SPECFEM NEX64",
+   "file": "reference/specfem_nex64.npz",
+   "node_hours": 0.53,
+   "about": "SPECFEM3D_GLOBE NEX64, its own time step, 96 processes on one Perlmutter CPU node"
+  },
+  {
+   "name": "SPECFEM NEX96",
+   "file": "reference/specfem_nex96.npz",
+   "node_hours": 0.916,
+   "about": "SPECFEM3D_GLOBE NEX96, its own time step, 96 processes on one Perlmutter CPU node"
+  }
+ ],
+ "dfdm": {
+  "run_file": "dfdm/run.toml",
+  "turn_file": "dfdm/turn.json",
+  "nodes": 4,
+  "ranks": 504,
+  "extra_files": {
+   "moho_face.txt": "dfdm/moho_face.txt.xz"
+  },
+  "node_hours_measured": 0.362
+ },
+ "needs_3d_models": true,
+ "stations": [
+  {
+   "name": "AZ01",
+   "lat": 16.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 10
+  },
+  {
+   "name": "AZ02",
+   "lat": 26.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 20
+  },
+  {
+   "name": "AZ03",
+   "lat": 36.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 30
+  },
+  {
+   "name": "AZ04",
+   "lat": 46.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 40
+  },
+  {
+   "name": "AZ05",
+   "lat": 56.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 50
+  },
+  {
+   "name": "AZ06",
+   "lat": 66.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 60
+  },
+  {
+   "name": "AZ07",
+   "lat": 76.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 70
+  },
+  {
+   "name": "AZ08",
+   "lat": 86.0,
+   "lon": 12.0,
+   "azimuth_deg": 0,
+   "distance_deg": 80
+  },
+  {
+   "name": "AZ09",
+   "lat": 84.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 90
+  },
+  {
+   "name": "AZ10",
+   "lat": 74.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 100
+  },
+  {
+   "name": "AZ11",
+   "lat": 64.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 110
+  },
+  {
+   "name": "AZ12",
+   "lat": 54.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 120
+  },
+  {
+   "name": "AZ13",
+   "lat": 44.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 130
+  },
+  {
+   "name": "AZ14",
+   "lat": 34.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 140
+  },
+  {
+   "name": "AZ15",
+   "lat": 24.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 150
+  },
+  {
+   "name": "AZ16",
+   "lat": 14.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 160
+  },
+  {
+   "name": "AZ17",
+   "lat": 4.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 170
+  },
+  {
+   "name": "AZ18",
+   "lat": -1.0,
+   "lon": -168.0,
+   "azimuth_deg": 0,
+   "distance_deg": 175
+  },
+  {
+   "name": "A045Z01",
+   "lat": 13.006148,
+   "lon": 19.239707,
+   "azimuth_deg": 45,
+   "distance_deg": 10
+  },
+  {
+   "name": "A045Z02",
+   "lat": 19.800403,
+   "lon": 26.894586,
+   "azimuth_deg": 45,
+   "distance_deg": 20
+  },
+  {
+   "name": "A045Z03",
+   "lat": 26.240558,
+   "lon": 35.214521,
+   "azimuth_deg": 45,
+   "distance_deg": 30
+  },
+  {
+   "name": "A045Z04",
+   "lat": 32.147658,
+   "lon": 44.467819,
+   "azimuth_deg": 45,
+   "distance_deg": 40
+  },
+  {
+   "name": "A045Z05",
+   "lat": 37.293451,
+   "lon": 54.913045,
+   "azimuth_deg": 45,
+   "distance_deg": 50
+  },
+  {
+   "name": "A045Z06",
+   "lat": 41.397721,
+   "lon": 66.720774,
+   "azimuth_deg": 45,
+   "distance_deg": 60
+  },
+  {
+   "name": "A045Z07",
+   "lat": 44.152767,
+   "lon": 79.834833,
+   "azimuth_deg": 45,
+   "distance_deg": 70
+  },
+  {
+   "name": "A045Z08",
+   "lat": 45.291952,
+   "lon": 93.835517,
+   "azimuth_deg": 45,
+   "distance_deg": 80
+  },
+  {
+   "name": "A045Z09",
+   "lat": 44.686981,
+   "lon": 107.967369,
+   "azimuth_deg": 45,
+   "distance_deg": 90
+  },
+  {
+   "name": "A045Z11",
+   "lat": 38.687486,
+   "lon": 133.651356,
+   "azimuth_deg": 45,
+   "distance_deg": 110
+  },
+  {
+   "name": "A045Z13",
+   "lat": 28.132896,
+   "lon": 154.102968,
+   "azimuth_deg": 45,
+   "distance_deg": 130
+  },
+  {
+   "name": "A045Z15",
+   "lat": 15.134884,
+   "lon": 170.515011,
+   "azimuth_deg": 45,
+   "distance_deg": 150
+  },
+  {
+   "name": "A090Z01",
+   "lat": 5.908519,
+   "lon": 22.053962,
+   "azimuth_deg": 90,
+   "distance_deg": 10
+  },
+  {
+   "name": "A090Z02",
+   "lat": 5.636946,
+   "lon": 32.101367,
+   "azimuth_deg": 90,
+   "distance_deg": 20
+  },
+  {
+   "name": "A090Z03",
+   "lat": 5.193771,
+   "lon": 42.136471,
+   "azimuth_deg": 90,
+   "distance_deg": 30
+  },
+  {
+   "name": "A090Z04",
+   "lat": 4.592788,
+   "lon": 52.15505,
+   "azimuth_deg": 90,
+   "distance_deg": 40
+  },
+  {
+   "name": "A090Z05",
+   "lat": 3.852583,
+   "lon": 62.154902,
+   "azimuth_deg": 90,
+   "distance_deg": 50
+  },
+  {
+   "name": "A090Z06",
+   "lat": 2.995885,
+   "lon": 72.136097,
+   "azimuth_deg": 90,
+   "distance_deg": 60
+  },
+  {
+   "name": "A090Z07",
+   "lat": 2.048809,
+   "lon": 82.100941,
+   "azimuth_deg": 90,
+   "distance_deg": 70
+  },
+  {
+   "name": "A090Z08",
+   "lat": 1.040043,
+   "lon": 92.053684,
+   "azimuth_deg": 90,
+   "distance_deg": 80
+  },
+  {
+   "name": "A090Z09",
+   "lat": 0.0,
+   "lon": 102.0,
+   "azimuth_deg": 90,
+   "distance_deg": 90
+  },
+  {
+   "name": "A090Z11",
+   "lat": -2.048809,
+   "lon": 121.899059,
+   "azimuth_deg": 90,
+   "distance_deg": 110
+  },
+  {
+   "name": "A090Z13",
+   "lat": -3.852583,
+   "lon": 141.845098,
+   "azimuth_deg": 90,
+   "distance_deg": 130
+  },
+  {
+   "name": "A090Z15",
+   "lat": -5.193771,
+   "lon": 161.863529,
+   "azimuth_deg": 90,
+   "distance_deg": 150
+  },
+  {
+   "name": "A135Z01",
+   "lat": -1.098698,
+   "lon": 19.054326,
+   "azimuth_deg": 135,
+   "distance_deg": 10
+  },
+  {
+   "name": "A135Z02",
+   "lat": -8.180686,
+   "lon": 26.142302,
+   "azimuth_deg": 135,
+   "distance_deg": 20
+  },
+  {
+   "name": "A135Z03",
+   "lat": -15.134884,
+   "lon": 33.484989,
+   "azimuth_deg": 135,
+   "distance_deg": 30
+  },
+  {
+   "name": "A135Z04",
+   "lat": -21.836307,
+   "lon": 41.317701,
+   "azimuth_deg": 135,
+   "distance_deg": 40
+  },
+  {
+   "name": "A135Z05",
+   "lat": -28.132896,
+   "lon": 49.897032,
+   "azimuth_deg": 135,
+   "distance_deg": 50
+  },
+  {
+   "name": "A135Z06",
+   "lat": -33.831581,
+   "lon": 59.493117,
+   "azimuth_deg": 135,
+   "distance_deg": 60
+  },
+  {
+   "name": "A135Z07",
+   "lat": -38.687486,
+   "lon": 70.348644,
+   "azimuth_deg": 135,
+   "distance_deg": 70
+  },
+  {
+   "name": "A135Z08",
+   "lat": -42.407443,
+   "lon": 82.581099,
+   "azimuth_deg": 135,
+   "distance_deg": 80
+  },
+  {
+   "name": "A135Z09",
+   "lat": -44.686981,
+   "lon": 96.032631,
+   "azimuth_deg": 135,
+   "distance_deg": 90
+  },
+  {
+   "name": "A135Z11",
+   "lat": -44.152767,
+   "lon": 124.165167,
+   "azimuth_deg": 135,
+   "distance_deg": 110
+  },
+  {
+   "name": "A135Z13",
+   "lat": -37.293451,
+   "lon": 149.086955,
+   "azimuth_deg": 135,
+   "distance_deg": 130
+  },
+  {
+   "name": "A135Z15",
+   "lat": -26.240558,
+   "lon": 168.785479,
+   "azimuth_deg": 135,
+   "distance_deg": 150
+  },
+  {
+   "name": "A225Z01",
+   "lat": -1.098698,
+   "lon": 4.945674,
+   "azimuth_deg": 225,
+   "distance_deg": 10
+  },
+  {
+   "name": "A225Z02",
+   "lat": -8.180686,
+   "lon": -2.142302,
+   "azimuth_deg": 225,
+   "distance_deg": 20
+  },
+  {
+   "name": "A225Z03",
+   "lat": -15.134884,
+   "lon": -9.484989,
+   "azimuth_deg": 225,
+   "distance_deg": 30
+  },
+  {
+   "name": "A225Z04",
+   "lat": -21.836307,
+   "lon": -17.317701,
+   "azimuth_deg": 225,
+   "distance_deg": 40
+  },
+  {
+   "name": "A225Z05",
+   "lat": -28.132896,
+   "lon": -25.897032,
+   "azimuth_deg": 225,
+   "distance_deg": 50
+  },
+  {
+   "name": "A225Z06",
+   "lat": -33.831581,
+   "lon": -35.493117,
+   "azimuth_deg": 225,
+   "distance_deg": 60
+  },
+  {
+   "name": "A225Z07",
+   "lat": -38.687486,
+   "lon": -46.348644,
+   "azimuth_deg": 225,
+   "distance_deg": 70
+  },
+  {
+   "name": "A225Z08",
+   "lat": -42.407443,
+   "lon": -58.581099,
+   "azimuth_deg": 225,
+   "distance_deg": 80
+  },
+  {
+   "name": "A225Z09",
+   "lat": -44.686981,
+   "lon": -72.032631,
+   "azimuth_deg": 225,
+   "distance_deg": 90
+  },
+  {
+   "name": "A225Z11",
+   "lat": -44.152767,
+   "lon": -100.165167,
+   "azimuth_deg": 225,
+   "distance_deg": 110
+  },
+  {
+   "name": "A225Z13",
+   "lat": -37.293451,
+   "lon": -125.086955,
+   "azimuth_deg": 225,
+   "distance_deg": 130
+  },
+  {
+   "name": "A225Z15",
+   "lat": -26.240558,
+   "lon": -144.785479,
+   "azimuth_deg": 225,
+   "distance_deg": 150
+  },
+  {
+   "name": "A270Z01",
+   "lat": 5.908519,
+   "lon": 1.946038,
+   "azimuth_deg": 270,
+   "distance_deg": 10
+  },
+  {
+   "name": "A270Z02",
+   "lat": 5.636946,
+   "lon": -8.101367,
+   "azimuth_deg": 270,
+   "distance_deg": 20
+  },
+  {
+   "name": "A270Z03",
+   "lat": 5.193771,
+   "lon": -18.136471,
+   "azimuth_deg": 270,
+   "distance_deg": 30
+  },
+  {
+   "name": "A270Z04",
+   "lat": 4.592788,
+   "lon": -28.15505,
+   "azimuth_deg": 270,
+   "distance_deg": 40
+  },
+  {
+   "name": "A270Z05",
+   "lat": 3.852583,
+   "lon": -38.154902,
+   "azimuth_deg": 270,
+   "distance_deg": 50
+  },
+  {
+   "name": "A270Z06",
+   "lat": 2.995885,
+   "lon": -48.136097,
+   "azimuth_deg": 270,
+   "distance_deg": 60
+  },
+  {
+   "name": "A270Z07",
+   "lat": 2.048809,
+   "lon": -58.100941,
+   "azimuth_deg": 270,
+   "distance_deg": 70
+  },
+  {
+   "name": "A270Z08",
+   "lat": 1.040043,
+   "lon": -68.053684,
+   "azimuth_deg": 270,
+   "distance_deg": 80
+  },
+  {
+   "name": "A270Z09",
+   "lat": -0.0,
+   "lon": -78.0,
+   "azimuth_deg": 270,
+   "distance_deg": 90
+  },
+  {
+   "name": "A270Z11",
+   "lat": -2.048809,
+   "lon": -97.899059,
+   "azimuth_deg": 270,
+   "distance_deg": 110
+  },
+  {
+   "name": "A270Z13",
+   "lat": -3.852583,
+   "lon": -117.845098,
+   "azimuth_deg": 270,
+   "distance_deg": 130
+  },
+  {
+   "name": "A270Z15",
+   "lat": -5.193771,
+   "lon": -137.863529,
+   "azimuth_deg": 270,
+   "distance_deg": 150
+  },
+  {
+   "name": "A315Z01",
+   "lat": 13.006148,
+   "lon": 4.760293,
+   "azimuth_deg": 315,
+   "distance_deg": 10
+  },
+  {
+   "name": "A315Z02",
+   "lat": 19.800403,
+   "lon": -2.894586,
+   "azimuth_deg": 315,
+   "distance_deg": 20
+  },
+  {
+   "name": "A315Z03",
+   "lat": 26.240558,
+   "lon": -11.214521,
+   "azimuth_deg": 315,
+   "distance_deg": 30
+  },
+  {
+   "name": "A315Z04",
+   "lat": 32.147658,
+   "lon": -20.467819,
+   "azimuth_deg": 315,
+   "distance_deg": 40
+  },
+  {
+   "name": "A315Z05",
+   "lat": 37.293451,
+   "lon": -30.913045,
+   "azimuth_deg": 315,
+   "distance_deg": 50
+  },
+  {
+   "name": "A315Z06",
+   "lat": 41.397721,
+   "lon": -42.720774,
+   "azimuth_deg": 315,
+   "distance_deg": 60
+  },
+  {
+   "name": "A315Z07",
+   "lat": 44.152767,
+   "lon": -55.834833,
+   "azimuth_deg": 315,
+   "distance_deg": 70
+  },
+  {
+   "name": "A315Z08",
+   "lat": 45.291952,
+   "lon": -69.835517,
+   "azimuth_deg": 315,
+   "distance_deg": 80
+  },
+  {
+   "name": "A315Z09",
+   "lat": 44.686981,
+   "lon": -83.967369,
+   "azimuth_deg": 315,
+   "distance_deg": 90
+  },
+  {
+   "name": "A315Z11",
+   "lat": 38.687486,
+   "lon": -109.651356,
+   "azimuth_deg": 315,
+   "distance_deg": 110
+  },
+  {
+   "name": "A315Z13",
+   "lat": 28.132896,
+   "lon": -130.102968,
+   "azimuth_deg": 315,
+   "distance_deg": 130
+  },
+  {
+   "name": "A315Z15",
+   "lat": 15.134884,
+   "lon": -146.515011,
+   "azimuth_deg": 315,
+   "distance_deg": 150
+  }
+ ]
+}
