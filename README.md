@@ -29,7 +29,9 @@ component across it. More earthquakes, depths and models are compared in the DFD
 ## Requirements
 
 - A Slurm cluster. The commands below are for Perlmutter CPU nodes; replace `<account>` with your allocation.
-- DFDM: a C++17 compiler with MPI, CMake 3.14 or newer, and BLAS/LAPACK (`CC` on Perlmutter).
+- DFDM: a C++17 compiler with OpenMP and MPI, CMake 3.14 or newer, and BLAS/LAPACK with their C interfaces (`CC`
+  in Perlmutter's default environment; build and run in the same module environment). The DFDM3D README lists the
+  details.
 - Python 3 with numpy, scipy and matplotlib (`pip install --user -r requirements.txt`).
 - SPECFEM3D_GLOBE only if you want to rerun SPECFEM yourself: a Fortran compiler with MPI (`ftn` on Perlmutter).
 
@@ -104,6 +106,10 @@ Every record is turned into the three components Z, R and T, put on one time axi
 earthquake, every 0.5 s) and low-passed at 25 mHz (periods longer than 40 s). For each station and component:
 
     misfit (%) = 100 x ||record - reference|| / ||reference||
+
+The 80-s half duration source (SPECFEM's Gaussian moment rate, used by both codes) itself carries almost no energy at
+periods shorter than about 70 s: its spectrum is down to 1 % of the peak at 72 s. These are long-period benchmarks;
+in SPECFEM's rule of thumb (shortest accurate period about 256 / NEX x 17 s) they sit near NEX64 (68 s).
 
 The tables give the median over the stations and, in brackets, the worst station. In the 3-D case, components whose
 reference amplitude is below 5 % of the largest station's are left out (a relative error of a near-zero record says
