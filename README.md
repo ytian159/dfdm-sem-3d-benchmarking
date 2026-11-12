@@ -30,7 +30,9 @@ component across it. More earthquakes, depths and models are compared in the DFD
 
 - A Slurm cluster. The commands below are for Perlmutter CPU nodes; replace `<account>` with your allocation.
 - DFDM: a C++17 compiler with OpenMP and MPI, CMake 3.14 or newer, and BLAS/LAPACK with their C interfaces (`CC`
-  in Perlmutter's default environment; build and run in the same module environment). The DFDM3D README lists the
+  in Perlmutter's default environment; build and run in the same module environment). On a generic Linux machine,
+  OpenMPI (or MPICH), OpenBLAS and LAPACKE packages work, for example on Debian or Ubuntu
+  `apt-get install cmake g++ libopenmpi-dev openmpi-bin libopenblas-dev liblapacke-dev`. The DFDM3D README lists the
   details.
 - Python 3 with numpy, scipy and matplotlib (`pip install --user -r requirements.txt`).
 - SPECFEM3D_GLOBE only if you want to rerun SPECFEM yourself: a Fortran compiler with MPI (`ftn` on Perlmutter).
@@ -42,6 +44,15 @@ git clone --recurse-submodules git@github.com:ytian159/dfdm-sem-3d-benchmarking.
 cd dfdm-sem-3d-benchmarking
 bash scripts/build_dfdm.sh            # builds external/dfdm_3d_elastic into build/dfdm/
 ```
+
+Without an SSH key for GitHub, clone over HTTPS and fetch the DFDM submodule the same way:
+`git -c url."https://github.com/".insteadOf="git@github.com:" submodule update --init --recursive`.
+
+`build_dfdm.sh` picks the BLAS/LAPACKE setup itself: Cray LibSci through the compiler wrapper on Perlmutter, and on
+other machines a separate `liblapacke` plus OpenBLAS when the system has one. The second case matters on Debian,
+Ubuntu and similar distributions, whose OpenBLAS package does not contain the LAPACKE functions (the build would
+otherwise stop with `undefined reference to LAPACKE_dsyev`). Set `DFDM_BLAS=cray|openblas|lapacke` to choose by
+hand, `DFDM_CMAKE_ARGS` to pass more CMake options, and `CXX` for another MPI compiler (default `CC`, else `mpicxx`).
 
 The 3-D case also needs two model tables, built from public data (SEMUCB-WM1 from the IRIS Earth Model
 Collaboration, CRUST1.0 from SPECFEM's data folder). This takes about a minute; on Perlmutter run it on a compute
